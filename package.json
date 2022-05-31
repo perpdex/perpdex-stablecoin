@@ -1,10 +1,14 @@
 {
   "name": "perpdex-stablecoin",
   "version": "1.0.0",
-  "description": "",
+  "description": "PerpDEX tokenized position contracts",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "build": "npm run typechain && hardhat compile",
+    "test": "hardhat test",
+    "lint": "npm run lint-contracts && npm run lint-tests",
+    "lint-contracts": "solhint 'contracts/**/*.sol'",
+    "lint-tests": "if grep -qr 'test' -e '.only('; then echo 'found .only() in tests'; exit 1; else echo 'not found .only() in tests'; fi"
   },
   "repository": {
     "type": "git",
@@ -13,6 +17,12 @@
   "keywords": [],
   "author": "",
   "license": "CC0-1.0",
+  "keywords": ["perpdex"],
+  "author": {
+    "name": "PerpDEX",
+    "url": "https://perpdex.com/"
+  },
+  "license": "GPL-3.0-or-later",
   "bugs": {
     "url": "https://github.com/perpdex/perpdex-stablecoin/issues"
   },
