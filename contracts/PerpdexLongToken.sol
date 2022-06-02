@@ -25,7 +25,7 @@ contract PerpdexLongToken is PerpdexTokenBase {
         returns (uint256 shares)
     {
         (int256 base, ) = _openPositionDry(false, true, assets);
-        return base.toUint256();
+        shares = base.toUint256();
     }
 
     function deposit(uint256 assets, address receiver)
@@ -51,7 +51,7 @@ contract PerpdexLongToken is PerpdexTokenBase {
         returns (uint256 assets)
     {
         (, int256 quote) = _openPositionDry(false, false, shares);
-        return (-quote).toUint256();
+        assets = (-quote).toUint256();
     }
 
     function mint(uint256 shares, address receiver)
@@ -61,12 +61,12 @@ contract PerpdexLongToken is PerpdexTokenBase {
     {
         require(shares != 0, "shares is zero");
 
-        uint256 assetsPreview = previewMint(shares);
-        _transferFrom(msg.sender, address(this), assetsPreview);
-        IPerpdexExchange(exchange).deposit(assetsPreview);
+        assets = previewMint(shares);
+        _transferFrom(msg.sender, address(this), assets);
+        IPerpdexExchange(exchange).deposit(assets);
 
         (, int256 quote) = _openPosition(false, false, shares);
-        require((-quote).toUint256() == assetsPreview);
+        require((-quote).toUint256() == assets);
 
         _mint(receiver, shares);
 
