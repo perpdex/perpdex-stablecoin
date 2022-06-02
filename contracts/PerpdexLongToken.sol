@@ -2,13 +2,8 @@
 pragma solidity 0.7.6;
 pragma abicoder v2;
 
-import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 import {SafeCast} from "@openzeppelin/contracts/utils/SafeCast.sol";
-import {FullMath} from "@uniswap/lib/contracts/libraries/FullMath.sol";
 import {IPerpdexExchange} from "../deps/perpdex-contract/contracts/interface/IPerpdexExchange.sol";
-import {IPerpdexMarket} from "../deps/perpdex-contract/contracts/interface/IPerpdexMarket.sol";
-import {IERC20Metadata} from "./interface/IERC20Metadata.sol";
 import {PerpdexTokenBase} from "./PerpdexTokenBase.sol";
 
 contract PerpdexLongToken is PerpdexTokenBase {
