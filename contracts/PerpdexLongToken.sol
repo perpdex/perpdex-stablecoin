@@ -47,7 +47,7 @@ contract PerpdexLongToken is IERC4626, ERC20 {
         override
         returns (uint256 shares)
     {
-        return FullMath.mulDiv(assets, Q96, _getMarkPriceX96());
+        return FullMath.mulDiv(assets, Q96, _getShareMarkPriceX96());
     }
 
     function convertToAssets(uint256 shares)
@@ -56,7 +56,7 @@ contract PerpdexLongToken is IERC4626, ERC20 {
         override
         returns (uint256 assets)
     {
-        return FullMath.mulDiv(shares, _getMarkPriceX96(), Q96);
+        return FullMath.mulDiv(shares, _getShareMarkPriceX96(), Q96);
     }
 
     function maxDeposit(address)
@@ -74,19 +74,11 @@ contract PerpdexLongToken is IERC4626, ERC20 {
         override
         returns (uint256 shares)
     {
-        (int256 positionIncreased, int256 quoteAmount) = IPerpdexExchange(
-            exchange
-        ).openPositionDry(
-                IPerpdexExchange.OpenPositionParams({
-                    market: market,
-                    isBaseToQuote: false,
-                    isExactInput: true,
-                    amount: assets,
-                    oppositeAmountBound: 0,
-                    deadline: type(uint256).max
-                }),
-                address(this)
-            );
+        (int256 positionIncreased, int256 quoteAmount) = _openPositionDry(
+            false,
+            true,
+            assets
+        );
         require(positionIncreased > 0);
         require((-quoteAmount).toUint256() == assets);
         return positionIncreased.toUint256();
@@ -105,18 +97,11 @@ contract PerpdexLongToken is IERC4626, ERC20 {
         );
         IPerpdexExchange(exchange).deposit(assets);
 
-        (int256 positionIncreased, int256 quoteAmount) = IPerpdexExchange(
-            exchange
-        ).openPosition(
-                IPerpdexExchange.OpenPositionParams({
-                    market: market,
-                    isBaseToQuote: false,
-                    isExactInput: true,
-                    amount: assets,
-                    oppositeAmountBound: 0,
-                    deadline: type(uint256).max
-                })
-            );
+        (int256 positionIncreased, int256 quoteAmount) = _openPosition(
+            false,
+            true,
+            assets
+        );
         require(positionIncreased > 0);
         require((-quoteAmount).toUint256() == assets);
 
@@ -141,19 +126,11 @@ contract PerpdexLongToken is IERC4626, ERC20 {
         override
         returns (uint256 assets)
     {
-        (int256 positionIncreased, int256 quoteAmount) = IPerpdexExchange(
-            exchange
-        ).openPositionDry(
-                IPerpdexExchange.OpenPositionParams({
-                    market: market,
-                    isBaseToQuote: false,
-                    isExactInput: false,
-                    amount: shares,
-                    oppositeAmountBound: 0,
-                    deadline: type(uint256).max
-                }),
-                address(this)
-            );
+        (int256 positionIncreased, int256 quoteAmount) = _openPositionDry(
+            false,
+            false,
+            shares
+        );
         require(positionIncreased.toUint256() == shares);
         return (-quoteAmount).toUint256();
     }
@@ -174,18 +151,11 @@ contract PerpdexLongToken is IERC4626, ERC20 {
         );
         IPerpdexExchange(exchange).deposit(assetsPreview);
 
-        (int256 positionIncreased, int256 quoteAmount) = IPerpdexExchange(
-            exchange
-        ).openPosition(
-                IPerpdexExchange.OpenPositionParams({
-                    market: market,
-                    isBaseToQuote: false,
-                    isExactInput: false,
-                    amount: shares,
-                    oppositeAmountBound: 0,
-                    deadline: type(uint256).max
-                })
-            );
+        (int256 positionIncreased, int256 quoteAmount) = _openPosition(
+            false,
+            false,
+            shares
+        );
         require(positionIncreased.toUint256() == shares);
         require((-quoteAmount).toUint256() == assetsPreview);
 
@@ -209,18 +179,11 @@ contract PerpdexLongToken is IERC4626, ERC20 {
         override
         returns (uint256 shares)
     {
-        (int256 baseAmount, int256 quoteAmount) = IPerpdexExchange(exchange)
-            .openPositionDry(
-                IPerpdexExchange.OpenPositionParams({
-                    market: market,
-                    isBaseToQuote: true,
-                    isExactInput: false,
-                    amount: assets,
-                    oppositeAmountBound: 0,
-                    deadline: type(uint256).max
-                }),
-                address(this)
-            );
+        (int256 baseAmount, int256 quoteAmount) = _openPositionDry(
+            true,
+            false,
+            assets
+        );
         require(baseAmount < 0);
         require(quoteAmount.toUint256() == assets);
         shares = (-baseAmount).toUint256();
@@ -231,17 +194,11 @@ contract PerpdexLongToken is IERC4626, ERC20 {
         address receiver,
         address owner
     ) external override returns (uint256 shares) {
-        (int256 baseAmount, int256 quoteAmount) = IPerpdexExchange(exchange)
-            .openPosition(
-                IPerpdexExchange.OpenPositionParams({
-                    market: market,
-                    isBaseToQuote: true,
-                    isExactInput: false,
-                    amount: assets,
-                    oppositeAmountBound: 0,
-                    deadline: type(uint256).max
-                })
-            );
+        (int256 baseAmount, int256 quoteAmount) = _openPosition(
+            true,
+            false,
+            assets
+        );
         require(baseAmount < 0);
         require(quoteAmount.toUint256() == assets);
         shares = (-baseAmount).toUint256();
@@ -274,18 +231,11 @@ contract PerpdexLongToken is IERC4626, ERC20 {
         override
         returns (uint256 assets)
     {
-        (int256 baseAmount, int256 quoteAmount) = IPerpdexExchange(exchange)
-            .openPositionDry(
-                IPerpdexExchange.OpenPositionParams({
-                    market: market,
-                    isBaseToQuote: true,
-                    isExactInput: true,
-                    amount: shares,
-                    oppositeAmountBound: 0,
-                    deadline: type(uint256).max
-                }),
-                address(this)
-            );
+        (int256 baseAmount, int256 quoteAmount) = _openPositionDry(
+            true,
+            true,
+            shares
+        );
         require((-baseAmount).toUint256() == shares);
         require(quoteAmount > 0);
         assets = quoteAmount.toUint256();
@@ -296,17 +246,11 @@ contract PerpdexLongToken is IERC4626, ERC20 {
         address receiver,
         address owner
     ) external override returns (uint256 assets) {
-        (int256 baseAmount, int256 quoteAmount) = IPerpdexExchange(exchange)
-            .openPosition(
-                IPerpdexExchange.OpenPositionParams({
-                    market: market,
-                    isBaseToQuote: true,
-                    isExactInput: true,
-                    amount: shares,
-                    oppositeAmountBound: 0,
-                    deadline: type(uint256).max
-                })
-            );
+        (int256 baseAmount, int256 quoteAmount) = _openPosition(
+            true,
+            true,
+            shares
+        );
         require((-baseAmount).toUint256() == shares);
         require(quoteAmount > 0);
 
@@ -323,7 +267,44 @@ contract PerpdexLongToken is IERC4626, ERC20 {
         emit Withdraw(msg.sender, receiver, owner, assets, shares);
     }
 
-    function _getMarkPriceX96() private view returns (uint256) {
+    function _openPositionDry(
+        bool isBaseToQuote,
+        bool isExactInput,
+        uint256 amount
+    ) private view returns (int256, int256) {
+        return
+            IPerpdexExchange(exchange).openPositionDry(
+                IPerpdexExchange.OpenPositionParams({
+                    market: market,
+                    isBaseToQuote: isBaseToQuote,
+                    isExactInput: isExactInput,
+                    amount: amount,
+                    oppositeAmountBound: 0,
+                    deadline: type(uint256).max
+                }),
+                address(this)
+            );
+    }
+
+    function _openPosition(
+        bool isBaseToQuote,
+        bool isExactInput,
+        uint256 amount
+    ) private returns (int256, int256) {
+        return
+            IPerpdexExchange(exchange).openPosition(
+                IPerpdexExchange.OpenPositionParams({
+                    market: market,
+                    isBaseToQuote: isBaseToQuote,
+                    isExactInput: isExactInput,
+                    amount: amount,
+                    oppositeAmountBound: 0,
+                    deadline: type(uint256).max
+                })
+            );
+    }
+
+    function _getShareMarkPriceX96() private view returns (uint256) {
         return IPerpdexMarket(market).getMarkPriceX96();
     }
 
