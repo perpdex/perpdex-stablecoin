@@ -1,4 +1,5 @@
 import "@nomiclabs/hardhat-waffle";
+import "solidity-coverage"
 
 module.exports = {
   solidity: {
