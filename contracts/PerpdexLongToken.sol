@@ -54,7 +54,7 @@ contract PerpdexLongToken is PerpdexTokenBase {
         override
         returns (uint256 assets)
     {
-        require(shares != 0, "shares is zero");
+        require(shares != 0, "PLT_M: shares is zero");
 
         assets = previewMint(shares);
         _transferFrom(msg.sender, address(this), assets);
