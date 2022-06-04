@@ -30,9 +30,12 @@
     "@uniswap/v3-core": "https://github.com/Uniswap/uniswap-v3-core/tarball/v1.0.0",
     "chai": "^4.3.6",
     "cloc": "^2.9.0",
+    "eslint-config-prettier": "^8.5.0",
     "ethereum-waffle": "^3.4.4",
     "ethers": "^5.6.2",
     "hardhat": "^2.9.3",
+    "husky": "^8.0.1",
+    "lint-staged": "^13.0.0",
     "prettier": "^2.6.2",
     "prettier-plugin-solidity": "^1.0.0-beta.19",
     "solidity-coverage": "0.7.17",
@@ -42,5 +45,14 @@
   "dependencies": {
     "@openzeppelin/contracts": "3.4.0",
     "solhint": "^3.3.7"
+  },
+  "lint-staged": {
+    "*.ts": [
+      "prettier --write"
+    ],
+    "*.sol": [
+      "prettier --write",
+      "solhint"
+    ]
   }
 }
