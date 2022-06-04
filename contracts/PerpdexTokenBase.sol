@@ -6,7 +6,7 @@ import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 import {SafeCast} from "@openzeppelin/contracts/utils/SafeCast.sol";
-import { FullMath } from "@uniswap/v3-core/contracts/libraries/FullMath.sol";
+import {FullMath} from "@uniswap/v3-core/contracts/libraries/FullMath.sol";
 import {IPerpdexExchange} from "../deps/perpdex-contract/contracts/interface/IPerpdexExchange.sol";
 import {IPerpdexMarket} from "../deps/perpdex-contract/contracts/interface/IPerpdexMarket.sol";
 import {IERC4626} from "./interface/IERC4626.sol";
@@ -160,19 +160,22 @@ abstract contract PerpdexTokenBase is IERC4626, ERC20 {
     ) internal pure {
         if (isExactInput) {
             if (isBaseToQuote) {
-                require((-base).toUint256() == amount);
-                require(quote > 0);
+                require((-base).toUint256() == amount, "PTB_VOPR: EI BTQ base");
+                require(quote > 0, "PTB_VOPR: EI BTQ quote");
             } else {
-                require(base > 0);
-                require((-quote).toUint256() == amount);
+                require(base > 0, "PTB_VOPR: EI QTB base");
+                require(
+                    (-quote).toUint256() == amount,
+                    "PTB_VOPR: EI QTB quote"
+                );
             }
         } else {
             if (isBaseToQuote) {
-                require(base < 0);
-                require(quote.toUint256() == amount);
+                require(base < 0, "PTB_VOPR: EO BTQ base");
+                require(quote.toUint256() == amount, "PTB_VOPR: EO BTQ quote");
             } else {
-                require(base.toUint256() == amount);
-                require(quote < 0);
+                require(base.toUint256() == amount, "PTB_VOPR: EO QTB base");
+                require(quote < 0, "PTB_VOPR: EO QTB quote");
             }
         }
     }
