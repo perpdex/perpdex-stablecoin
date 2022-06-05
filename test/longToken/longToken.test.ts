@@ -129,4 +129,43 @@ describe("PerpdexLongToken", async () => {
       });
     });
   });
+
+  describe("convertToAssets", async () => {
+    [
+      {
+        title: "totalAssets 0 totalShares 0 shares 10",
+        totalAssets: 0,
+        totalShares: 0,
+        shares: 10,
+        assets: 10,
+      },
+      {
+        title: "totalAssets 100 totalShares 100 shares 50",
+        totalAssets: 100,
+        totalShares: 100,
+        shares: 50,
+        assets: 50,
+      },
+    ].forEach((test) => {
+      it(test.title, async () => {
+        // set totalAssets
+        await exchange.setAccountInfo(
+          longToken.address,
+          {
+            collateralBalance: test.totalAssets,
+          },
+          []
+        );
+
+        // set totalShares
+        if (test.totalShares > 0) {
+          await longTokenMock.totalSupply.returns(test.totalShares);
+        }
+
+        expect(await longTokenMock.convertToAssets(test.shares)).to.eq(
+          test.assets
+        );
+      });
+    });
+  });
 });
