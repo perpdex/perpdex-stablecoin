@@ -44,6 +44,10 @@ describe("PerpdexLongToken", async () => {
     return parseUnits(String(amount), wethDecimals);
   }
 
+  it("asset", async () => {
+    expect(await longToken.asset()).to.eq(await exchange.settlementToken());
+  });
+
   describe("totalAssets", async () => {
     [
       {
