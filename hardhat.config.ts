@@ -10,6 +10,12 @@ module.exports = {
         enabled: true,
         runs: 200,
       },
+      // smock
+      outputSelection: {
+        "*": {
+          "*": ["storageLayout"],
+        },
+      },
     },
   },
   typechain: {
