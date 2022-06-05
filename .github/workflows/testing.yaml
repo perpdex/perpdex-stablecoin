@@ -39,6 +39,12 @@ jobs:
       - name: Install contract package dependencies
         run: yarn install
 
+      - name: Build deps
+        run: |
+          cd deps/perpdex-contract/
+          npm install
+          npm run build
+
       - name: Build contract package
         run: yarn build
 
