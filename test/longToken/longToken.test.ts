@@ -1,7 +1,6 @@
 import { ethers } from "hardhat";
 import { expect } from "chai";
-import { MockContract } from "ethereum-waffle";
-import { BigNumber, Wallet } from "ethers";
+import { Wallet } from "ethers";
 import { parseUnits } from "ethers/lib/utils";
 import { waffle } from "hardhat";
 import { createPerpdexExchangeFixture } from "./fixtures";
@@ -11,12 +10,14 @@ import {
   TestPerpdexMarket,
   TestERC20,
 } from "../../typechain";
+import { MockContract } from "@defi-wonderland/smock";
 
 describe("PerpdexLongToken", async () => {
   let loadFixture = waffle.createFixtureLoader(waffle.provider.getWallets());
   let fixture;
 
   let longToken: PerpdexLongToken;
+  let longTokenMock: MockContract;
   let market: TestPerpdexMarket;
   let exchange: TestPerpdexExchange;
   let weth: TestERC20;
@@ -29,6 +30,7 @@ describe("PerpdexLongToken", async () => {
     fixture = await loadFixture(createPerpdexExchangeFixture());
 
     longToken = fixture.perpdexLongToken;
+    longTokenMock = fixture.perpdexLongTokenMock;
     market = fixture.perpdexMarket;
     exchange = fixture.perpdexExchange;
 
@@ -87,5 +89,44 @@ describe("PerpdexLongToken", async () => {
     expect(await longToken.maxMint(alice.address)).to.eq(
       ethers.constants.MaxUint256
     );
+  });
+
+  describe("convertToShares", async () => {
+    [
+      {
+        title: "totalAssets 0 totalShares 0 assets 10",
+        totalAssets: 0,
+        totalShares: 0,
+        assets: 10,
+        shares: 10,
+      },
+      {
+        title: "totalAssets 100 totalShares 100 assets 50",
+        totalAssets: 100,
+        totalShares: 100,
+        assets: 50,
+        shares: 50,
+      },
+    ].forEach((test) => {
+      it(test.title, async () => {
+        // set totalAssets
+        await exchange.setAccountInfo(
+          longToken.address,
+          {
+            collateralBalance: parseWeth(test.totalAssets),
+          },
+          []
+        );
+
+        // set totalShares
+        if (test.totalShares > 0) {
+          await longTokenMock.totalSupply.returns(test.totalShares);
+        }
+
+        expect(
+          await longTokenMock.convertToShares(parseWeth(test.assets))
+        ).to.eq(parseWeth(test.shares));
+      });
+    });
   });
 });

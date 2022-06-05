@@ -54,7 +54,16 @@ abstract contract PerpdexTokenBase is IERC4626, ERC20 {
         override
         returns (uint256 shares)
     {
-        return FullMath.mulDiv(assets, totalSupply(), totalAssets());
+        uint256 supply = totalSupply();
+        if (supply == 0) {
+            return
+                FullMath.mulDiv(
+                    assets,
+                    10**decimals(),
+                    10**IERC20Metadata(asset).decimals()
+                );
+        }
+        return FullMath.mulDiv(assets, supply, totalAssets());
     }
 
     function convertToAssets(uint256 shares)
