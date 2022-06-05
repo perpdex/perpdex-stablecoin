@@ -108,13 +108,12 @@ abstract contract PerpdexTokenBase is IERC4626, ERC20 {
         uint256 amount
     ) internal view returns (int256 base, int256 quote) {
         (base, quote) = IPerpdexExchange(exchange).openPositionDry(
-            IPerpdexExchange.OpenPositionParams({
+            IPerpdexExchange.OpenPositionDryParams({
                 market: market,
                 isBaseToQuote: isBaseToQuote,
                 isExactInput: isExactInput,
                 amount: amount,
-                oppositeAmountBound: 0,
-                deadline: type(uint256).max
+                oppositeAmountBound: 0
             }),
             address(this)
         );
