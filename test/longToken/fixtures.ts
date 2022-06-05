@@ -32,6 +32,7 @@ export function createPerpdexExchangeFixture(
     let settlementToken = hre.ethers.constants.AddressZero;
     const tokenFactory = await ethers.getContractFactory("TestERC20");
     let weth = (await tokenFactory.deploy("TestWETH", "WETH", 6)) as TestERC20;
+    let weth = (await tokenFactory.deploy("TestWETH", "WETH", 18)) as TestERC20;
     settlementToken = weth.address;
 
     // exchange
