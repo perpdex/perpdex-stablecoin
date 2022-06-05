@@ -1,3 +1,4 @@
+import { smock, MockContract } from "@defi-wonderland/smock";
 import { BigNumber, Wallet } from "ethers";
 import { ethers, waffle } from "hardhat";
 import IPerpdexPriceFeedJson from "../../deps/perpdex-contract/artifacts/contracts/interface/IPerpdexPriceFeed.sol/IPerpdexPriceFeed.json";
@@ -12,6 +13,7 @@ export interface PerpdexExchangeFixture {
   perpdexExchange: TestPerpdexExchange;
   perpdexMarket: TestPerpdexMarket;
   perpdexLongToken: PerpdexLongToken;
+  perpdexLongTokenMock: MockContract;
   weth: TestERC20;
   owner: Wallet;
   alice: Wallet;
@@ -31,7 +33,6 @@ export function createPerpdexExchangeFixture(
   ): Promise<PerpdexExchangeFixture> => {
     let settlementToken = hre.ethers.constants.AddressZero;
     const tokenFactory = await ethers.getContractFactory("TestERC20");
-    let weth = (await tokenFactory.deploy("TestWETH", "WETH", 6)) as TestERC20;
     let weth = (await tokenFactory.deploy("TestWETH", "WETH", 18)) as TestERC20;
     settlementToken = weth.address;
 
@@ -72,11 +73,16 @@ export function createPerpdexExchangeFixture(
     const perpdexLongToken = (await perpdexLongTokenF.deploy(
       perpdexMarket.address
     )) as PerpdexLongToken;
+    const perpdexLongTokenMockF = await smock.mock("PerpdexLongToken");
+    const perpdexLongTokenMock = await perpdexLongTokenMockF.deploy(
+      perpdexMarket.address
+    );
 
     return {
       perpdexExchange,
       perpdexMarket,
       perpdexLongToken,
+      perpdexLongTokenMock,
       weth,
       owner,
       alice,
