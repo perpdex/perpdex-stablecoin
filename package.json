@@ -6,6 +6,7 @@
   "scripts": {
     "lint": "solhint 'contracts/**/*.sol'",
     "test": "hardhat test",
+    "build": "hardhat compile",
     "coverage": "hardhat coverage",
     "code-lines": "npx cloc --exclude-dir=test contracts",
     "prepare": "husky install"
@@ -16,7 +17,7 @@
   },
   "keywords": [],
   "author": "",
-  "license": "CC0-1.0",
+  "license": "GPL-3.0-or-later",
   "bugs": {
     "url": "https://github.com/perpdex/perpdex-stablecoin/issues"
   },
