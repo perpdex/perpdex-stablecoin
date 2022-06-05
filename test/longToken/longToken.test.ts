@@ -76,4 +76,10 @@ describe("PerpdexLongToken", async () => {
       });
     });
   });
+
+  it("maxDeposit", async () => {
+    expect(await longToken.maxDeposit(alice.address)).to.eq(
+      ethers.constants.MaxInt256
+    );
+  });
 });
