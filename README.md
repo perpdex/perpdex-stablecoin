@@ -12,6 +12,17 @@ yarn install
 
 ### test
 ```bash
+# build deps' typechain
+cd deps/perpdex-contract/
+npm install
+npm run build
+cd ../../
+
+# copy them
+mkdir -p typechain/perpdex-contract
+cp -r deps/perpdex-contract/typechain/* typechain/perpdex-contract/
+
+# run test
 yarn test
 ```
 
