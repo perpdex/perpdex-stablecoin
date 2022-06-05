@@ -82,4 +82,10 @@ describe("PerpdexLongToken", async () => {
       ethers.constants.MaxInt256
     );
   });
+
+  it("maxMint", async () => {
+    expect(await longToken.maxMint(alice.address)).to.eq(
+      ethers.constants.MaxUint256
+    );
+  });
 });
