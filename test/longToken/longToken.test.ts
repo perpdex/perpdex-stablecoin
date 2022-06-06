@@ -90,7 +90,7 @@ describe("PerpdexLongToken", async () => {
     });
   });
 
-  describe.skip("convertToShares", async () => {
+  describe("convertToShares", async () => {
     [
       {
         title: "totalAssets 0 totalShares 0 assets 10",
@@ -127,7 +127,7 @@ describe("PerpdexLongToken", async () => {
     });
   });
 
-  describe.skip("convertToAssets", async () => {
+  describe("convertToAssets", async () => {
     [
       {
         title: "no mint yet",
@@ -503,7 +503,7 @@ describe("PerpdexLongToken", async () => {
     });
   });
 
-  describe.skip("mint", async () => {
+  describe("mint", async () => {
     beforeEach(async () => {
       // approve max
       await weth.approveForce(
