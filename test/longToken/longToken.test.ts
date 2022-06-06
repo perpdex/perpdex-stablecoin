@@ -175,4 +175,96 @@ describe("PerpdexLongToken", async () => {
       });
     });
   });
+
+  async function initPool(liquidity): Promise<void> {
+    // common config
+    await exchange.connect(owner).setImRatio(100000);
+    await exchange.connect(owner).setMmRatio(50000);
+
+    await market.connect(owner).setPoolFeeRatio(0);
+    await market.connect(owner).setFundingMaxPremiumRatio(0);
+    await exchange.connect(owner).setIsMarketAllowed(market.address, true);
+
+    await exchange.setAccountInfo(
+      owner.address,
+      {
+        collateralBalance: parseAssets(liquidity.quote).mul(10),
+      },
+      []
+    );
+
+    // price == 1
+    await exchange.connect(owner).addLiquidity({
+      market: market.address,
+      base: parseAssets(liquidity.base),
+      quote: parseAssets(liquidity.quote),
+      minBase: 0,
+      minQuote: 0,
+      deadline: ethers.constants.MaxUint256,
+    });
+  }
+  describe.skip("previewDeposit", async () => {
+    beforeEach(async () => {
+      // approve max
+      await weth.approveForce(
+        alice.address,
+        longToken.address,
+        ethers.constants.MaxUint256
+      );
+      await weth.approveForce(
+        longToken.address,
+        exchange.address,
+        ethers.constants.MaxUint256
+      );
+    });
+    [
+      {
+        title: "returns 0 when pool does not have enough liquidity",
+        pool: {
+          base: "1",
+          quote: "1",
+        },
+        aliceAssetsBefore: "100",
+        depositAmount: "10",
+        sharesAmount: "0",
+      },
+      {
+        title: "returns 0 when alice does not have enough WETH",
+        pool: {
+          base: "10000",
+          quote: "10000",
+        },
+        aliceAssetsBefore: "5",
+        depositAmount: "10",
+        sharesAmount: "0",
+      },
+      {
+        title: "returns preview amount when alice has enough WETH",
+        pool: {
+          base: "10000",
+          quote: "10000",
+        },
+        aliceAssetsBefore: "50",
+        depositAmount: "20",
+        sharesAmount: "19.960079840319361277",
+      },
+    ].forEach((test) => {
+      it(test.title, async () => {
+        // pool
+        await initPool(test.pool);
+
+        // alice balance
+        await weth
+          .connect(owner)
+          .mint(alice.address, parseAssets(test.aliceAssetsBefore));
+
+        // alice deposit preview
+        var depositAmount = parseAssets(test.depositAmount);
+        var sharesAmount = parseShares(test.sharesAmount);
+        expect(
+          await longToken.connect(alice).previewDeposit(depositAmount)
+        ).to.eq(sharesAmount);
+      });
+    });
+  });
 });
