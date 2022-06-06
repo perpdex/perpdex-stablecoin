@@ -91,6 +91,9 @@ describe("PerpdexLongToken", async () => {
   });
 
   it("maxDeposit", async () => {
+    // TODO: consider:
+    // - priceLimit
+    // - pool liquidity
     expect(await longToken.maxDeposit(alice.address)).to.eq(
       ethers.constants.MaxInt256
     );
