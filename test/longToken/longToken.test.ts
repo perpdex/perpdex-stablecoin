@@ -90,15 +90,6 @@ describe("PerpdexLongToken", async () => {
     });
   });
 
-  it("maxDeposit", async () => {
-    // TODO: consider:
-    // - priceLimit
-    // - pool liquidity
-    expect(await longToken.maxDeposit(alice.address)).to.eq(
-      ethers.constants.MaxInt256
-    );
-  });
-
   it("maxMint", async () => {
     expect(await longToken.maxMint(alice.address)).to.eq(
       ethers.constants.MaxUint256
@@ -180,7 +171,6 @@ describe("PerpdexLongToken", async () => {
   });
 
   async function initPool(liquidity): Promise<void> {
-    // common config
     await exchange.connect(owner).setImRatio(100000);
     await exchange.connect(owner).setMmRatio(50000);
 
@@ -196,16 +186,47 @@ describe("PerpdexLongToken", async () => {
       []
     );
 
-    // price == 1
-    await exchange.connect(owner).addLiquidity({
-      market: market.address,
-      base: parseAssets(liquidity.base),
-      quote: parseAssets(liquidity.quote),
-      minBase: 0,
-      minQuote: 0,
-      deadline: ethers.constants.MaxUint256,
-    });
+    if (liquidity.base !== "0" && liquidity.quote !== "0") {
+      await exchange.connect(owner).addLiquidity({
+        market: market.address,
+        base: parseAssets(liquidity.base),
+        quote: parseAssets(liquidity.quote),
+        minBase: 0,
+        minQuote: 0,
+        deadline: ethers.constants.MaxUint256,
+      });
+    }
   }
+
+  describe.skip("maxDeposit", async () => {
+    [
+      {
+        title: "TODO: returns 0 when pool liquidity is zero",
+        pool: {
+          base: "0",
+          quote: "0",
+        },
+        expected: "0",
+      },
+      {
+        title: "TODO: priceLimit",
+        pool: {
+          base: "10",
+          quote: "10",
+        },
+        expected: "20",
+      },
+    ].forEach((test) => {
+      it(test.title, async () => {
+        // init pool
+        await initPool(test.pool);
+
+        expect(await longToken.maxDeposit(alice.address)).to.eq(
+          parseAssets(test.expected)
+        );
+      });
+    });
+  });
 
   describe.skip("previewDeposit", async () => {
     beforeEach(async () => {
