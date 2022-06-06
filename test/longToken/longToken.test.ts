@@ -417,7 +417,84 @@ describe("PerpdexLongToken", async () => {
     });
   });
 
-  describe("mint", async () => {
+  describe("previewMint", async () => {
+    beforeEach(async () => {
+      // approve max
+      await weth.approveForce(
+        alice.address,
+        longToken.address,
+        ethers.constants.MaxUint256
+      );
+      await weth.approveForce(
+        longToken.address,
+        exchange.address,
+        ethers.constants.MaxUint256
+      );
+    });
+
+    [
+      {
+        title: "returns 0 when shares is zero",
+        pool: {
+          base: "1",
+          quote: "1",
+        },
+        aliceAssetsBefore: "100",
+        mintShares: "0",
+        assetsAmount: "0",
+      },
+      // TODO:
+      // {
+      //   title: "returns patial assets when pool liquidity is not enought",
+      //   pool: {
+      //     base: "1",
+      //     quote: "1",
+      //   },
+      //   aliceAssetsBefore: "100",
+      //   mintShares: "10",
+      //   assetsAmount: "123",
+      // },
+      {
+        title: "returns ideal assets even if alice's assets is not enough",
+        pool: {
+          base: "10000",
+          quote: "10000",
+        },
+        aliceAssetsBefore: "5",
+        mintShares: "10",
+        assetsAmount: "10.010010010010010011",
+      },
+      {
+        title: "returns ideal assets when alice's assets is enough",
+        pool: {
+          base: "10000",
+          quote: "10000",
+        },
+        aliceAssetsBefore: "100",
+        mintShares: "10",
+        assetsAmount: "10.010010010010010011",
+      },
+    ].forEach((test) => {
+      it(test.title, async () => {
+        // pool
+        await initPool(test.pool);
+
+        // alice balance
+        await weth
+          .connect(owner)
+          .mint(alice.address, parseAssets(test.aliceAssetsBefore));
+
+        // alice deposit preview
+        var mintShares = parseAssets(test.mintShares);
+        var assetsAmount = parseShares(test.assetsAmount);
+        expect(await longToken.connect(alice).previewMint(mintShares)).to.eq(
+          assetsAmount
+        );
+      });
+    });
+  });
+
+  describe.skip("mint", async () => {
     beforeEach(async () => {
       // approve max
       await weth.approveForce(
