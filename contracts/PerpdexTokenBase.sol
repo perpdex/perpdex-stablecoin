@@ -95,10 +95,13 @@ abstract contract PerpdexTokenBase is IERC4626, ERC20 {
 
     function maxMint(address)
         external
-        pure
+        view
         override
         returns (uint256 maxShares)
     {
+        if (_isMarketEmptyPool()) {
+            return 0;
+        }
         return type(uint256).max;
     }
 
@@ -241,5 +244,11 @@ abstract contract PerpdexTokenBase is IERC4626, ERC20 {
                     ).symbol()
                 )
             );
+    }
+
+    function _isMarketEmptyPool() internal view returns (bool) {
+        // TODO:
+        // return IPerpdexMarket(market).poolInfo().totalLiquidity == 0;
+        return false;
     }
 }
