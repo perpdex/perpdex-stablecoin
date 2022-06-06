@@ -1,8 +1,12 @@
-import { smock, MockContract } from "@defi-wonderland/smock";
+import {
+  smock,
+  MockContract,
+  MockContractFactory,
+} from "@defi-wonderland/smock";
 import { BigNumber, Wallet } from "ethers";
 import { ethers, waffle } from "hardhat";
 import IPerpdexPriceFeedJson from "../../deps/perpdex-contract/artifacts/contracts/interface/IPerpdexPriceFeed.sol/IPerpdexPriceFeed.json";
-import { PerpdexLongToken } from "../../typechain";
+import { PerpdexLongToken, PerpdexLongToken__factory } from "../../typechain";
 import {
   TestERC20,
   TestPerpdexExchange,
@@ -13,7 +17,7 @@ export interface PerpdexExchangeFixture {
   perpdexExchange: TestPerpdexExchange;
   perpdexMarket: TestPerpdexMarket;
   perpdexLongToken: PerpdexLongToken;
-  perpdexLongTokenMock: MockContract;
+  perpdexLongTokenMock: MockContract<PerpdexLongToken>;
   weth: TestERC20;
   owner: Wallet;
   alice: Wallet;
@@ -67,16 +71,17 @@ export function createPerpdexExchangeFixture(
     await perpdexMarket.connect(owner).setFundingMaxPremiumRatio(0);
 
     // long token
+    const perpdexLongTokenFMock: MockContractFactory<PerpdexLongToken__factory> =
+      await smock.mock("PerpdexLongToken");
+    const perpdexLongTokenMock: MockContract<PerpdexLongToken> =
+      await perpdexLongTokenFMock.deploy(perpdexMarket.address);
+
     const perpdexLongTokenF = await ethers.getContractFactory(
       "PerpdexLongToken"
     );
     const perpdexLongToken = (await perpdexLongTokenF.deploy(
       perpdexMarket.address
     )) as PerpdexLongToken;
-    const perpdexLongTokenMockF = await smock.mock("PerpdexLongToken");
-    const perpdexLongTokenMock = await perpdexLongTokenMockF.deploy(
-      perpdexMarket.address
-    );
 
     return {
       perpdexExchange,
