@@ -220,7 +220,7 @@ describe("PerpdexLongToken", async () => {
     });
   });
 
-  describe.skip("previewDeposit", async () => {
+  describe("previewDeposit", async () => {
     beforeEach(async () => {
       // approve max
       await weth.approveForce(
@@ -246,24 +246,25 @@ describe("PerpdexLongToken", async () => {
       //   sharesAmount: "0",
       // },
       {
-        title: "returns 0 when pool does not have enough liquidity",
+        title:
+          "returns partial shares when pool does not have enough liquidity",
         pool: {
-          base: "1",
-          quote: "1",
+          base: "10",
+          quote: "10",
         },
-        aliceAssetsBefore: "100",
-        depositAmount: "10",
-        sharesAmount: "0",
+        aliceAssetsBefore: "1000",
+        depositAmount: "100",
+        sharesAmount: "9.090909090909090909",
       },
       {
-        title: "returns 0 when alice does not have enough WETH",
+        title: "returns ideal shares even if alice does not have enough assets",
         pool: {
           base: "10000",
           quote: "10000",
         },
         aliceAssetsBefore: "5",
         depositAmount: "10",
-        sharesAmount: "0",
+        sharesAmount: "9.990009990009990009",
       },
       {
         title: "returns preview amount when alice has enough WETH",

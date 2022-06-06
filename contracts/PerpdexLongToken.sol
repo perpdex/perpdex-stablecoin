@@ -19,6 +19,9 @@ contract PerpdexLongToken is PerpdexTokenBase {
         override
         returns (uint256 shares)
     {
+        if (assets == 0) {
+            return 0;
+        }
         (int256 base, ) = _openPositionDry(false, true, assets);
         shares = base.toUint256();
     }
