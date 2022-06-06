@@ -17,7 +17,8 @@ describe("PerpdexLongToken", async () => {
   let fixture;
 
   let longToken: PerpdexLongToken;
-  let longTokenMock: MockContract;
+  let longTokenMock: MockContract<PerpdexLongToken>;
+  let longTokenDecimals: number;
   let market: TestPerpdexMarket;
   let exchange: TestPerpdexExchange;
   let weth: TestERC20;
@@ -31,6 +32,7 @@ describe("PerpdexLongToken", async () => {
 
     longToken = fixture.perpdexLongToken;
     longTokenMock = fixture.perpdexLongTokenMock;
+    longTokenDecimals = await longToken.decimals();
     market = fixture.perpdexMarket;
     exchange = fixture.perpdexExchange;
 
@@ -42,8 +44,12 @@ describe("PerpdexLongToken", async () => {
     bob = fixture.bob;
   });
 
-  function parseWeth(amount: number) {
-    return parseUnits(String(amount), wethDecimals);
+  function parseAssets(amount: string) {
+    return parseUnits(amount, wethDecimals);
+  }
+
+  function parseShares(amount: string) {
+    return parseUnits(amount, longTokenDecimals);
   }
 
   it("asset", async () => {
@@ -54,13 +60,18 @@ describe("PerpdexLongToken", async () => {
     [
       {
         title: "no balance",
-        balance: 0,
-        totalAssets: 0,
+        balance: "0",
+        totalAssets: "0",
       },
       {
         title: "balance 10 WETH",
-        balance: 10,
-        totalAssets: 10,
+        balance: "10",
+        totalAssets: "10",
+      },
+      {
+        title: "balance -10 WETH",
+        balance: "-10",
+        totalAssets: "0",
       },
     ].forEach((test) => {
       it(test.title, async () => {
@@ -68,12 +79,12 @@ describe("PerpdexLongToken", async () => {
         await exchange.setAccountInfo(
           longToken.address,
           {
-            collateralBalance: parseWeth(test.balance),
+            collateralBalance: parseAssets(test.balance),
           },
           []
         );
         expect(await longToken.totalAssets()).to.eq(
-          parseWeth(test.totalAssets)
+          parseAssets(test.totalAssets)
         );
       });
     });
@@ -95,17 +106,17 @@ describe("PerpdexLongToken", async () => {
     [
       {
         title: "totalAssets 0 totalShares 0 assets 10",
-        totalAssets: 0,
-        totalShares: 0,
-        assets: 10,
-        shares: 10,
+        totalAssets: "0",
+        totalShares: "0",
+        assets: "10",
+        shares: "10",
       },
       {
         title: "totalAssets 100 totalShares 100 assets 50",
-        totalAssets: 100,
-        totalShares: 100,
-        assets: 50,
-        shares: 50,
+        totalAssets: "100",
+        totalShares: "100",
+        assets: "50",
+        shares: "50",
       },
     ].forEach((test) => {
       it(test.title, async () => {
@@ -113,19 +124,17 @@ describe("PerpdexLongToken", async () => {
         await exchange.setAccountInfo(
           longToken.address,
           {
-            collateralBalance: parseWeth(test.totalAssets),
+            collateralBalance: parseAssets(test.totalAssets),
           },
           []
         );
 
         // set totalShares
-        if (test.totalShares > 0) {
-          await longTokenMock.totalSupply.returns(test.totalShares);
-        }
+        await longTokenMock.totalSupply.returns(parseShares(test.totalShares));
 
         expect(
-          await longTokenMock.convertToShares(parseWeth(test.assets))
-        ).to.eq(parseWeth(test.shares));
+          await longTokenMock.convertToShares(parseAssets(test.assets))
+        ).to.eq(parseShares(test.shares));
       });
     });
   });
@@ -133,18 +142,18 @@ describe("PerpdexLongToken", async () => {
   describe("convertToAssets", async () => {
     [
       {
-        title: "totalAssets 0 totalShares 0 shares 10",
-        totalAssets: 0,
-        totalShares: 0,
-        shares: 10,
-        assets: 10,
+        title: "no mint yet",
+        totalAssets: "0",
+        totalShares: "0",
+        shares: "10",
+        assets: "10",
       },
       {
-        title: "totalAssets 100 totalShares 100 shares 50",
-        totalAssets: 100,
-        totalShares: 100,
-        shares: 50,
-        assets: 50,
+        title: "totalAssets is 100, totalShares is 100. want to mint 50 shares",
+        totalAssets: "100",
+        totalShares: "100",
+        shares: "50",
+        assets: "50",
       },
     ].forEach((test) => {
       it(test.title, async () => {
@@ -152,19 +161,17 @@ describe("PerpdexLongToken", async () => {
         await exchange.setAccountInfo(
           longToken.address,
           {
-            collateralBalance: test.totalAssets,
+            collateralBalance: parseAssets(test.totalAssets),
           },
           []
         );
 
         // set totalShares
-        if (test.totalShares > 0) {
-          await longTokenMock.totalSupply.returns(test.totalShares);
-        }
+        await longTokenMock.totalSupply.returns(parseShares(test.totalShares));
 
-        expect(await longTokenMock.convertToAssets(test.shares)).to.eq(
-          test.assets
-        );
+        expect(
+          await longTokenMock.convertToAssets(parseShares(test.shares))
+        ).to.eq(parseAssets(test.assets));
       });
     });
   });
