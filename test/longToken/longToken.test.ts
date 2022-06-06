@@ -192,32 +192,30 @@ describe("PerpdexLongToken", async () => {
     }
   }
 
-  describe.skip("maxDeposit", async () => {
+  describe("maxDeposit", async () => {
     [
+      // {
+      //   title: "TODO: returns 0 when pool liquidity is zero",
+      //   pool: {
+      //     base: "0",
+      //     quote: "0",
+      //   },
+      //   expected: "0",
+      // },
       {
-        title: "TODO: returns 0 when pool liquidity is zero",
-        pool: {
-          base: "0",
-          quote: "0",
-        },
-        expected: "0",
-      },
-      {
-        title: "TODO: priceLimit",
+        title: "return max int when pool has some liquidity",
         pool: {
           base: "10",
           quote: "10",
         },
-        expected: "20",
+        expected: ethers.constants.MaxInt256,
       },
     ].forEach((test) => {
       it(test.title, async () => {
         // init pool
         await initPool(test.pool);
 
-        expect(await longToken.maxDeposit(alice.address)).to.eq(
-          parseAssets(test.expected)
-        );
+        expect(await longToken.maxDeposit(alice.address)).to.eq(test.expected);
       });
     });
   });
@@ -237,6 +235,16 @@ describe("PerpdexLongToken", async () => {
       );
     });
     [
+      // {
+      //   title: "TODO: returns 0 if market disabled",
+      //   pool: {
+      //     base: "10",
+      //     quote: "10",
+      //   },
+      //   aliceAssetsBefore: "1000",
+      //   depositAmount: "100",
+      //   sharesAmount: "0",
+      // },
       {
         title: "returns 0 when pool does not have enough liquidity",
         pool: {
