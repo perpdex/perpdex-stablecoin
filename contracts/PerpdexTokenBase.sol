@@ -133,9 +133,8 @@ abstract contract PerpdexTokenBase is IERC4626, ERC20 {
                 isBaseToQuote: isBaseToQuote,
                 isExactInput: isExactInput,
                 amount: amount,
-                oppositeAmountBound: 0
-            }),
-            address(this)
+                oppositeAmountBound: isExactInput ? 0 : type(uint256).max
+            })
         );
         _validateOpenPositionResult(
             isBaseToQuote,
@@ -158,7 +157,7 @@ abstract contract PerpdexTokenBase is IERC4626, ERC20 {
                 isBaseToQuote: isBaseToQuote,
                 isExactInput: isExactInput,
                 amount: amount,
-                oppositeAmountBound: 0,
+                oppositeAmountBound: isExactInput ? 0 : type(uint256).max,
                 deadline: type(uint256).max
             })
         );

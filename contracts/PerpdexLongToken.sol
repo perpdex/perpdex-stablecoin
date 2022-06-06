@@ -61,7 +61,7 @@ contract PerpdexLongToken is PerpdexTokenBase {
         IPerpdexExchange(exchange).deposit(assets);
 
         (, int256 quote) = _openPosition(false, false, shares);
-        require((-quote).toUint256() == assets);
+        require((-quote).toUint256() == assets, "PLT_M: assets not fully used");
 
         _mint(receiver, shares);
 

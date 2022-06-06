@@ -394,4 +394,111 @@ describe("PerpdexLongToken", async () => {
       });
     });
   });
+
+  describe("mint", async () => {
+    beforeEach(async () => {
+      // approve max
+      await weth.approveForce(
+        alice.address,
+        longToken.address,
+        ethers.constants.MaxUint256
+      );
+      await weth.approveForce(
+        longToken.address,
+        exchange.address,
+        ethers.constants.MaxUint256
+      );
+    });
+    [
+      {
+        title: "reverts when shares is zero",
+        pool: {
+          base: "1",
+          quote: "1",
+        },
+        aliceAssetsBefore: "100",
+        mintShares: "0",
+        revertedWith: "PLT_M: shares is zero",
+      },
+      {
+        title: "reverts when pool does not have enough liquidity",
+        pool: {
+          base: "1",
+          quote: "1",
+        },
+        aliceAssetsBefore: "100",
+        mintShares: "10",
+        revertedWith: "SafeMath: subtraction overflow",
+      },
+      {
+        title: "reverts when alice does not have enough WETH",
+        pool: {
+          base: "10000",
+          quote: "10000",
+        },
+        aliceAssetsBefore: "5",
+        mintShares: "10",
+        revertedWith: "ERC20: transfer amount exceeds balance",
+      },
+      {
+        title: "successes when alice has enough WETH",
+        pool: {
+          base: "10000",
+          quote: "10000",
+        },
+        aliceAssetsBefore: "50",
+        mintShares: "20",
+        assetsAmount: "20.040080160320641283",
+        totalAssetsAfter: "20.080240641603848980",
+        aliceAssetsAfter: "29.959919839679358717",
+      },
+    ].forEach((test) => {
+      it(test.title, async () => {
+        // pool
+        await initPool(test.pool);
+
+        // alice balance
+        await weth
+          .connect(owner)
+          .mint(alice.address, parseAssets(test.aliceAssetsBefore));
+
+        // alice mint preview
+        var mintShares = parseShares(test.mintShares);
+        // var previewRes = await longToken
+        //     .connect(alice)
+        //     .previewMint(mintShares);
+
+        // alice mints
+        var mintRes = expect(
+          longToken.connect(alice).mint(mintShares, alice.address)
+        );
+
+        // assert
+        if (test.revertedWith !== void 0) {
+          await mintRes.to.revertedWith(test.revertedWith);
+        } else {
+          var assetsAmount = parseAssets(test.assetsAmount);
+          // event
+          await mintRes.to
+            .emit(longToken, "Deposit")
+            .withArgs(alice.address, alice.address, assetsAmount, mintShares);
+
+          // share
+          expect(await longToken.totalSupply()).to.eq(mintShares);
+          expect(await longToken.balanceOf(alice.address)).to.eq(mintShares);
+
+          // asset
+          expect(await longToken.totalAssets()).to.eq(
+            parseAssets(test.totalAssetsAfter)
+          );
+          expect(await weth.balanceOf(alice.address)).to.eq(
+            parseAssets(test.aliceAssetsAfter)
+          );
+
+          // preview >= assets
+          // expect(previewRes).to.gte(assetsAmount);
+        }
+      });
+    });
+  });
 });
