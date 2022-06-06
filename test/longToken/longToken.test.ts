@@ -316,7 +316,7 @@ describe("PerpdexLongToken", async () => {
         },
         aliceAssetsBefore: "100",
         depositAmount: "10",
-        revertedWith: "TL_OP: normal order forbidden",
+        revertedWith: "TL_OP: normal order price limit",
       },
       {
         title: "reverts when alice does not have enough WETH",
