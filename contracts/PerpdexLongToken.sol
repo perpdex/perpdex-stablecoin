@@ -82,6 +82,9 @@ contract PerpdexLongToken is PerpdexTokenBase {
     }
 
     function previewRedeem(uint256 shares) external view override returns (uint256 assets) {
+        if (shares == 0) {
+            return 0;
+        }
         (, int256 quote) = _openPositionDry(true, true, shares);
         assets = quote.toUint256();
     }

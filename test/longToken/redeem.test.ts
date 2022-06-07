@@ -78,4 +78,52 @@ describe("PerpdexLongToken redeem", async () => {
             })
         })
     })
+
+    describe("previewRedeem", async () => {
+        beforeEach(async () => {
+            // approve max
+            await weth.approveForce(alice.address, longToken.address, ethers.constants.MaxUint256)
+            await weth.approveForce(longToken.address, exchange.address, ethers.constants.MaxUint256)
+            await weth.approveForce(longToken.address, exchange.address, ethers.constants.MaxUint256)
+            await weth.approveForce(exchange.address, longToken.address, ethers.constants.MaxUint256)
+            await weth.approveForce(longToken.address, longToken.address, ethers.constants.MaxUint256)
+        })
+        ;[
+            {
+                title: "returns 0 when redeem is zero",
+                pool: {
+                    base: "10000",
+                    quote: "10000",
+                },
+                depositAssets: "10",
+                redeemShares: "0",
+                withdrawAssets: "0",
+            },
+            {
+                title: "returns ideal shares",
+                pool: {
+                    base: "10000",
+                    quote: "10000",
+                },
+                depositAssets: "10",
+                redeemShares: "4.992508740634677667",
+                withdrawAssets: "5",
+            },
+        ].forEach(test => {
+            it(test.title, async () => {
+                // pool
+                await initPool(exchange, market, owner, parseShares(test.pool.base), parseAssets(test.pool.base))
+
+                // alice deposits
+                var depositAssets = parseAssets(test.depositAssets)
+                await weth.connect(owner).mint(alice.address, depositAssets)
+                await longToken.connect(alice).deposit(depositAssets, alice.address)
+
+                // alice withdraws
+                expect(await longToken.connect(alice).previewRedeem(parseShares(test.redeemShares))).to.eq(
+                    parseAssets(test.withdrawAssets),
+                )
+            })
+        })
+    })
 })
