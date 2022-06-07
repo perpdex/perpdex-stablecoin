@@ -2,13 +2,11 @@
 pragma solidity 0.7.6;
 pragma abicoder v2;
 
-import {PerpdexExchange} from "../../deps/perpdex-contract/contracts/PerpdexExchange.sol";
-import {PerpdexStructs} from "../../deps/perpdex-contract/contracts/lib/PerpdexStructs.sol";
+import { PerpdexExchange } from "../../deps/perpdex-contract/contracts/PerpdexExchange.sol";
+import { PerpdexStructs } from "../../deps/perpdex-contract/contracts/lib/PerpdexStructs.sol";
 
 contract TestPerpdexExchange is PerpdexExchange {
-    constructor(address settlementTokenArg)
-        PerpdexExchange(settlementTokenArg)
-    {}
+    constructor(address settlementTokenArg) PerpdexExchange(settlementTokenArg) {}
 
     function setAccountInfo(
         address trader,

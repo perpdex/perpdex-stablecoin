@@ -4,12 +4,7 @@ pragma solidity >=0.7.6;
 
 // https://eips.ethereum.org/EIPS/eip-4626
 interface IERC4626 {
-    event Deposit(
-        address indexed caller,
-        address indexed owner,
-        uint256 assets,
-        uint256 shares
-    );
+    event Deposit(address indexed caller, address indexed owner, uint256 assets, uint256 shares);
 
     event Withdraw(
         address indexed caller,
@@ -23,57 +18,29 @@ interface IERC4626 {
 
     function totalAssets() external view returns (uint256 totalManagedAssets);
 
-    function convertToShares(uint256 assets)
-        external
-        view
-        returns (uint256 shares);
+    function convertToShares(uint256 assets) external view returns (uint256 shares);
 
-    function convertToAssets(uint256 shares)
-        external
-        view
-        returns (uint256 assets);
+    function convertToAssets(uint256 shares) external view returns (uint256 assets);
 
-    function maxDeposit(address receiver)
-        external
-        view
-        returns (uint256 maxAssets);
+    function maxDeposit(address receiver) external view returns (uint256 maxAssets);
 
-    function previewDeposit(uint256 assets)
-        external
-        view
-        returns (uint256 shares);
+    function previewDeposit(uint256 assets) external view returns (uint256 shares);
 
-    function maxMint(address receiver)
-        external
-        view
-        returns (uint256 maxShares);
+    function maxMint(address receiver) external view returns (uint256 maxShares);
 
     function previewMint(uint256 shares) external view returns (uint256 assets);
 
-    function maxWithdraw(address owner)
-        external
-        view
-        returns (uint256 maxAssets);
+    function maxWithdraw(address owner) external view returns (uint256 maxAssets);
 
-    function previewWithdraw(uint256 assets)
-        external
-        view
-        returns (uint256 shares);
+    function previewWithdraw(uint256 assets) external view returns (uint256 shares);
 
     function maxRedeem(address owner) external view returns (uint256 maxShares);
 
-    function previewRedeem(uint256 shares)
-        external
-        view
-        returns (uint256 assets);
+    function previewRedeem(uint256 shares) external view returns (uint256 assets);
 
-    function mint(uint256 shares, address receiver)
-        external
-        returns (uint256 assets);
+    function mint(uint256 shares, address receiver) external returns (uint256 assets);
 
-    function deposit(uint256 assets, address receiver)
-        external
-        returns (uint256 shares);
+    function deposit(uint256 assets, address receiver) external returns (uint256 shares);
 
     function redeem(
         uint256 shares,
