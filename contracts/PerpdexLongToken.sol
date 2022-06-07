@@ -54,7 +54,10 @@ contract PerpdexLongToken is PerpdexTokenBase {
         emit Deposit(msg.sender, receiver, assets, shares);
     }
 
-    function previewWithdraw(uint256 assets) external view override returns (uint256 shares) {
+    function previewWithdraw(uint256 assets) public view override returns (uint256 shares) {
+        if (assets == 0) {
+            return 0;
+        }
         (int256 base, ) = _openPositionDry(true, false, assets);
         shares = (-base).toUint256();
     }
@@ -64,10 +67,10 @@ contract PerpdexLongToken is PerpdexTokenBase {
         address receiver,
         address owner
     ) external override returns (uint256 shares) {
+        require(assets != 0, "PLT_W: withdraw is zero");
         require(assets <= maxWithdraw(owner), "PLT_W: withdraw more than max");
 
-        (int256 base, ) = _openPosition(true, false, assets);
-        shares = (-base).toUint256();
+        shares = previewWithdraw(assets);
 
         IPerpdexExchange(exchange).withdraw(assets);
         _transferFrom(address(this), receiver, assets);
