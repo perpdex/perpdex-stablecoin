@@ -16,10 +16,6 @@ contract TestERC20 is ERC20PresetMinterPauser {
         _transferFeeRatio = 0;
     }
 
-    function setMinter(address minter) external {
-        grantRole(MINTER_ROLE, minter);
-    }
-
     function approveForce(
         address from,
         address to,
