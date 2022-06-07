@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 import { MockContract } from "@defi-wonderland/smock"
 import { expect } from "chai"
 import { Wallet } from "ethers"

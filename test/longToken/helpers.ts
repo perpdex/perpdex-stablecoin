@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 import { ethers } from "hardhat"
 
 export async function initPool(exchange, market, owner, base, quote): Promise<void> {

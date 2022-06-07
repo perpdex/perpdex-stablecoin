@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 import { MockContract, MockContractFactory, smock } from "@defi-wonderland/smock"
 import { BigNumber, Wallet } from "ethers"
 import { ethers, waffle } from "hardhat"
