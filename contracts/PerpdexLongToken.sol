@@ -64,6 +64,8 @@ contract PerpdexLongToken is PerpdexTokenBase {
         address receiver,
         address owner
     ) external override returns (uint256 shares) {
+        require(assets <= maxWithdraw(owner), "PLT_W: withdraw more than max");
+
         (int256 base, ) = _openPosition(true, false, assets);
         shares = (-base).toUint256();
 

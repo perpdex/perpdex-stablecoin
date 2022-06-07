@@ -60,7 +60,7 @@ describe("PerpdexLongToken.withdraw", async () => {
                     base: "100",
                     quote: "100",
                 },
-                depositAmount: "1",
+                depositAssets: "1",
                 expected: "1.009999999999999999",
             },
         ].forEach(test => {
@@ -69,10 +69,107 @@ describe("PerpdexLongToken.withdraw", async () => {
                 await initPool(exchange, market, owner, parseShares(test.pool.base), parseAssets(test.pool.base))
 
                 // alice deposits
-                await weth.connect(owner).mint(alice.address, parseAssets(test.depositAmount))
-                await longToken.connect(alice).deposit(parseAssets(test.depositAmount), alice.address)
+                await weth.connect(owner).mint(alice.address, parseAssets(test.depositAssets))
+                await longToken.connect(alice).deposit(parseAssets(test.depositAssets), alice.address)
 
                 expect(await longToken.maxWithdraw(alice.address)).to.eq(parseAssets(test.expected))
+            })
+        })
+    })
+    describe("withdraw", async () => {
+        beforeEach(async () => {
+            // approve max
+            await weth.approveForce(alice.address, longToken.address, ethers.constants.MaxUint256)
+            await weth.approveForce(longToken.address, alice.address, ethers.constants.MaxUint256)
+            await weth.approveForce(longToken.address, exchange.address, ethers.constants.MaxUint256)
+            await weth.approveForce(exchange.address, longToken.address, ethers.constants.MaxUint256)
+            await weth.approveForce(longToken.address, longToken.address, ethers.constants.MaxUint256)
+        })
+        ;[
+            {
+                title: "reverts when withdraw assets is more than max",
+                pool: {
+                    base: "10000",
+                    quote: "10000",
+                },
+                depositAssets: "10",
+                removeLiquidity: 0,
+                withdrawAssets: "20",
+                revertedWith: "PLT_W: withdraw more than max",
+            },
+            // TODO: overflow occurred when removing liquidity
+            // {
+            //     title: "reverts when pool does not have enough liquidity",
+            //     pool: {
+            //         base: "100",
+            //         quote: "100",
+            //     },
+            //     depositAssets: "1",
+            //     removeLiquidity: 100000,
+            //     withdrawAssets: "0.5",
+            //     revertedWith: "TL_OP: normal order price limit",
+            // },
+            {
+                title: "success",
+                pool: {
+                    base: "10000",
+                    quote: "10000",
+                },
+                depositAssets: "10",
+                removeLiquidity: 0,
+                withdrawAssets: "5",
+                burnedShares: "4.992508740634677667",
+            },
+        ].forEach(test => {
+            it(test.title, async () => {
+                // pool
+                await initPool(exchange, market, owner, parseShares(test.pool.base), parseAssets(test.pool.base))
+
+                // alice deposits
+                var depositAssets = parseAssets(test.depositAssets)
+                await weth.connect(owner).mint(alice.address, depositAssets)
+                await longToken.connect(alice).deposit(depositAssets, alice.address)
+                // var liq = await market.poolInfo()
+                // console.log(liq)
+
+                // owner remove liquidity
+                if (test.removeLiquidity > 0) {
+                    await exchange.connect(owner).removeLiquidity({
+                        trader: owner.address,
+                        market: market.address,
+                        liquidity: test.removeLiquidity,
+                        minBase: 0,
+                        minQuote: 0,
+                        deadline: ethers.constants.MaxUint256,
+                    })
+                }
+
+                // alice withdraw
+                var assetsBefore = await weth.balanceOf(alice.address)
+                var sharesBefore = await longToken.balanceOf(alice.address)
+                var totalSharesBefore = await longToken.totalSupply()
+                var withdrawAssets = parseAssets(test.withdrawAssets)
+                var withdrawRes = expect(
+                    longToken.connect(alice).withdraw(withdrawAssets, alice.address, alice.address),
+                )
+
+                // assert
+                if (test.revertedWith !== void 0) {
+                    await withdrawRes.to.revertedWith(test.revertedWith)
+                } else {
+                    var burnedShares = parseShares(test.burnedShares)
+                    // event
+                    await withdrawRes.to
+                        .emit(longToken, "Withdraw")
+                        .withArgs(alice.address, alice.address, alice.address, withdrawAssets, burnedShares)
+
+                    // share
+                    expect(await longToken.totalSupply()).to.eq(totalSharesBefore.sub(burnedShares))
+                    expect(await longToken.balanceOf(alice.address)).to.eq(sharesBefore.sub(burnedShares))
+
+                    // asset
+                    expect(await weth.balanceOf(alice.address)).to.eq(assetsBefore.add(withdrawAssets))
+                }
             })
         })
     })
