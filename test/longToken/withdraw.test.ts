@@ -78,7 +78,7 @@ describe("PerpdexLongToken withdraw", async () => {
         })
     })
 
-    describe("previewDeposit", async () => {
+    describe("previewWithdraw", async () => {
         beforeEach(async () => {
             // approve max
             await weth.approveForce(alice.address, longToken.address, ethers.constants.MaxUint256)
@@ -143,10 +143,12 @@ describe("PerpdexLongToken withdraw", async () => {
                     })
                 }
 
-                // alice withdraws
-                expect(await longToken.connect(alice).previewWithdraw(parseAssets(test.withdrawAssets))).to.eq(
-                    parseShares(test.burnedShares),
-                )
+                // load before state
+                var burnedShares = parseShares(test.burnedShares)
+
+                // alice previews withdraw
+                var withdrawAssets = parseAssets(test.withdrawAssets)
+                expect(await longToken.connect(alice).previewWithdraw(withdrawAssets)).to.eq(burnedShares)
             })
         })
     })
@@ -203,8 +205,8 @@ describe("PerpdexLongToken withdraw", async () => {
                 },
                 depositAssets: "10",
                 removeLiquidity: 0,
-                withdrawAssets: "5",
-                burnedShares: "4.992508740634677667",
+                withdrawAssets: "9.9",
+                burnedShares: "9.890010989999990110",
             },
         ].forEach(test => {
             it(test.title, async () => {
@@ -231,6 +233,7 @@ describe("PerpdexLongToken withdraw", async () => {
                 // alice withdraw
                 var assetsBefore = await weth.balanceOf(alice.address)
                 var sharesBefore = await longToken.balanceOf(alice.address)
+                var totalAssetsBefore = await longToken.totalAssets()
                 var totalSharesBefore = await longToken.totalSupply()
                 var withdrawAssets = parseAssets(test.withdrawAssets)
                 var withdrawRes = expect(
@@ -252,6 +255,7 @@ describe("PerpdexLongToken withdraw", async () => {
                     expect(await longToken.balanceOf(alice.address)).to.eq(sharesBefore.sub(burnedShares))
 
                     // asset
+                    expect(await longToken.totalAssets()).to.lt(totalAssetsBefore)
                     expect(await weth.balanceOf(alice.address)).to.eq(assetsBefore.add(withdrawAssets))
                 }
             })

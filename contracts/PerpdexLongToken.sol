@@ -70,7 +70,8 @@ contract PerpdexLongToken is PerpdexTokenBase {
         require(assets != 0, "PLT_W: withdraw is zero");
         require(assets <= maxWithdraw(owner), "PLT_W: withdraw more than max");
 
-        shares = previewWithdraw(assets);
+        (int256 base, ) = _openPosition(true, false, assets);
+        shares = (-base).toUint256();
 
         IPerpdexExchange(exchange).withdraw(assets);
         _transferFrom(address(this), receiver, assets);
