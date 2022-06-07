@@ -5,6 +5,7 @@ import { parseUnits } from "ethers/lib/utils"
 import { ethers, waffle } from "hardhat"
 import { PerpdexLongToken, TestERC20, TestPerpdexExchange, TestPerpdexMarket } from "../../typechain"
 import { createPerpdexExchangeFixture } from "./fixtures"
+import { initPool } from "./helpers"
 
 describe("PerpdexLongToken", async () => {
     let loadFixture = waffle.createFixtureLoader(waffle.provider.getWallets())
@@ -152,34 +153,6 @@ describe("PerpdexLongToken", async () => {
         })
     })
 
-    async function initPool(liquidity): Promise<void> {
-        await exchange.connect(owner).setImRatio(100000)
-        await exchange.connect(owner).setMmRatio(50000)
-
-        await market.connect(owner).setPoolFeeRatio(0)
-        await market.connect(owner).setFundingMaxPremiumRatio(0)
-        await exchange.connect(owner).setIsMarketAllowed(market.address, true)
-
-        await exchange.setAccountInfo(
-            owner.address,
-            {
-                collateralBalance: parseAssets(liquidity.quote).mul(10),
-            },
-            [],
-        )
-
-        if (liquidity.base !== "0" && liquidity.quote !== "0") {
-            await exchange.connect(owner).addLiquidity({
-                market: market.address,
-                base: parseAssets(liquidity.base),
-                quote: parseAssets(liquidity.quote),
-                minBase: 0,
-                minQuote: 0,
-                deadline: ethers.constants.MaxUint256,
-            })
-        }
-    }
-
     describe("maxDeposit", async () => {
         ;[
             // {
@@ -200,8 +173,7 @@ describe("PerpdexLongToken", async () => {
             },
         ].forEach(test => {
             it(test.title, async () => {
-                // init pool
-                await initPool(test.pool)
+                await initPool(exchange, market, owner, parseShares(test.pool.base), parseAssets(test.pool.base))
 
                 expect(await longToken.maxDeposit(alice.address)).to.eq(test.expected)
             })
@@ -258,7 +230,7 @@ describe("PerpdexLongToken", async () => {
         ].forEach(test => {
             it(test.title, async () => {
                 // pool
-                await initPool(test.pool)
+                await initPool(exchange, market, owner, parseShares(test.pool.base), parseAssets(test.pool.base))
 
                 // alice balance
                 await weth.connect(owner).mint(alice.address, parseAssets(test.aliceAssetsBefore))
@@ -313,7 +285,7 @@ describe("PerpdexLongToken", async () => {
         ].forEach(test => {
             it(test.title, async () => {
                 // pool
-                await initPool(test.pool)
+                await initPool(exchange, market, owner, parseShares(test.pool.base), parseAssets(test.pool.base))
 
                 // alice balance
                 await weth.connect(owner).mint(alice.address, parseAssets(test.aliceAssetsBefore))
@@ -371,7 +343,7 @@ describe("PerpdexLongToken", async () => {
         ].forEach(test => {
             it(test.title, async () => {
                 // init pool
-                await initPool(test.pool)
+                await initPool(exchange, market, owner, parseShares(test.pool.base), parseAssets(test.pool.base))
 
                 expect(await longToken.maxMint(alice.address)).to.eq(test.expected)
             })
@@ -428,8 +400,7 @@ describe("PerpdexLongToken", async () => {
             },
         ].forEach(test => {
             it(test.title, async () => {
-                // pool
-                await initPool(test.pool)
+                await initPool(exchange, market, owner, parseShares(test.pool.base), parseAssets(test.pool.base))
 
                 // alice balance
                 await weth.connect(owner).mint(alice.address, parseAssets(test.aliceAssetsBefore))
@@ -494,7 +465,7 @@ describe("PerpdexLongToken", async () => {
         ].forEach(test => {
             it(test.title, async () => {
                 // pool
-                await initPool(test.pool)
+                await initPool(exchange, market, owner, parseShares(test.pool.base), parseAssets(test.pool.base))
 
                 // alice balance
                 await weth.connect(owner).mint(alice.address, parseAssets(test.aliceAssetsBefore))
