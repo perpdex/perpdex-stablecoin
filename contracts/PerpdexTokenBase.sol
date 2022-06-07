@@ -69,7 +69,7 @@ abstract contract PerpdexTokenBase is IERC4626, ERC20 {
         return convertToAssets(balanceOf(owner));
     }
 
-    function maxRedeem(address owner) external view override returns (uint256 maxShares) {
+    function maxRedeem(address owner) public view override returns (uint256 maxShares) {
         return balanceOf(owner);
     }
 

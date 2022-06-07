@@ -94,9 +94,12 @@ contract PerpdexLongToken is PerpdexTokenBase {
         address receiver,
         address owner
     ) external override returns (uint256 assets) {
-        (, int256 quote) = _openPosition(true, true, shares);
+        require(shares != 0, "PLT_R: redeem is zero");
+        require(shares <= maxRedeem(owner), "PLT_R: redeem more than max");
 
+        (, int256 quote) = _openPosition(true, true, shares);
         assets = quote.toUint256();
+
         IPerpdexExchange(exchange).withdraw(assets);
         _transferFrom(address(this), receiver, assets);
         _burn(owner, shares);
