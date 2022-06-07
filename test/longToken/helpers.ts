@@ -13,7 +13,7 @@ export async function initPool(exchange, market, owner, base, quote): Promise<vo
         [],
     )
 
-    if (base !== "0" && quote !== "0") {
+    if (base.gt(0) && quote.gt(0)) {
         await exchange.connect(owner).addLiquidity({
             market: market.address,
             base: base,

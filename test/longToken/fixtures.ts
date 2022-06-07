@@ -1,21 +1,13 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-import { MockContract, MockContractFactory, smock } from "@defi-wonderland/smock"
 import { BigNumber, Wallet } from "ethers"
 import { ethers, waffle } from "hardhat"
 import IPerpdexPriceFeedJson from "../../deps/perpdex-contract/artifacts/contracts/interface/IPerpdexPriceFeed.sol/IPerpdexPriceFeed.json"
-import {
-    PerpdexLongToken,
-    PerpdexLongToken__factory,
-    TestERC20,
-    TestPerpdexExchange,
-    TestPerpdexMarket,
-} from "../../typechain"
+import { PerpdexLongToken, TestERC20, TestPerpdexExchange, TestPerpdexMarket } from "../../typechain"
 
 export interface PerpdexExchangeFixture {
     perpdexExchange: TestPerpdexExchange
     perpdexMarket: TestPerpdexMarket
     perpdexLongToken: PerpdexLongToken
-    perpdexLongTokenMock: MockContract<PerpdexLongToken>
     weth: TestERC20
     owner: Wallet
     alice: Wallet
@@ -57,13 +49,6 @@ export function createPerpdexExchangeFixture(
         await perpdexMarket.connect(owner).setFundingMaxPremiumRatio(0)
 
         // long token
-        const perpdexLongTokenFMock: MockContractFactory<PerpdexLongToken__factory> = await smock.mock(
-            "PerpdexLongToken",
-        )
-        const perpdexLongTokenMock: MockContract<PerpdexLongToken> = await perpdexLongTokenFMock.deploy(
-            perpdexMarket.address,
-        )
-
         const perpdexLongTokenF = await ethers.getContractFactory("PerpdexLongToken")
         const perpdexLongToken = (await perpdexLongTokenF.deploy(perpdexMarket.address)) as PerpdexLongToken
 
@@ -71,7 +56,6 @@ export function createPerpdexExchangeFixture(
             perpdexExchange,
             perpdexMarket,
             perpdexLongToken,
-            perpdexLongTokenMock,
             weth,
             owner,
             alice,

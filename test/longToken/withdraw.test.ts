@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-import { MockContract } from "@defi-wonderland/smock"
 import { expect } from "chai"
 import { Wallet } from "ethers"
 import { parseUnits } from "ethers/lib/utils"
@@ -13,7 +12,6 @@ describe("PerpdexLongToken withdraw", async () => {
     let fixture
 
     let longToken: PerpdexLongToken
-    let longTokenMock: MockContract<PerpdexLongToken>
     let longTokenDecimals: number
     let market: TestPerpdexMarket
     let exchange: TestPerpdexExchange
@@ -27,7 +25,6 @@ describe("PerpdexLongToken withdraw", async () => {
         fixture = await loadFixture(createPerpdexExchangeFixture())
 
         longToken = fixture.perpdexLongToken
-        longTokenMock = fixture.perpdexLongTokenMock
         longTokenDecimals = await longToken.decimals()
         market = fixture.perpdexMarket
         exchange = fixture.perpdexExchange
