@@ -35,7 +35,7 @@
     "cloc": "^2.9.0",
     "eslint-config-prettier": "^8.5.0",
     "ethereum-waffle": "^3.4.4",
-    "ethers": "^5.6.2",
+    "ethers": "5.6.1",
     "hardhat": "^2.9.3",
     "husky": "^8.0.1",
     "lint-staged": "^13.0.0",
