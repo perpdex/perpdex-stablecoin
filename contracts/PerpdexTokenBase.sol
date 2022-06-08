@@ -2,15 +2,15 @@
 pragma solidity 0.7.6;
 pragma abicoder v2;
 
-import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
-import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
-import {SafeCast} from "@openzeppelin/contracts/utils/SafeCast.sol";
-import {FullMath} from "@uniswap/v3-core/contracts/libraries/FullMath.sol";
-import {IPerpdexExchange} from "../deps/perpdex-contract/contracts/interface/IPerpdexExchange.sol";
-import {IPerpdexMarket} from "../deps/perpdex-contract/contracts/interface/IPerpdexMarket.sol";
-import {IERC4626} from "./interface/IERC4626.sol";
-import {IERC20Metadata} from "./interface/IERC20Metadata.sol";
+import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import { ERC20 } from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
+import { SafeCast } from "@openzeppelin/contracts/utils/SafeCast.sol";
+import { FullMath } from "@uniswap/v3-core/contracts/libraries/FullMath.sol";
+import { IPerpdexExchange } from "../deps/perpdex-contract/contracts/interface/IPerpdexExchange.sol";
+import { IPerpdexMarket } from "../deps/perpdex-contract/contracts/interface/IPerpdexMarket.sol";
+import { IERC4626 } from "./interface/IERC4626.sol";
+import { IERC20Metadata } from "./interface/IERC20Metadata.sol";
 
 abstract contract PerpdexTokenBase is IERC4626, ERC20 {
     using SafeCast for int256;
@@ -24,81 +24,52 @@ abstract contract PerpdexTokenBase is IERC4626, ERC20 {
         address marketArg,
         string memory namePrefix,
         string memory symbolPrefix
-    )
-        ERC20(
-            _getERC20Name(marketArg, namePrefix),
-            _getERC20Symbol(marketArg, symbolPrefix)
-        )
-    {
+    ) ERC20(_getERC20Name(marketArg, namePrefix), _getERC20Symbol(marketArg, symbolPrefix)) {
         market = marketArg;
         exchange = IPerpdexMarket(marketArg).exchange();
-        asset = IPerpdexExchange(IPerpdexMarket(marketArg).exchange())
-            .settlementToken();
+        asset = IPerpdexExchange(IPerpdexMarket(marketArg).exchange()).settlementToken();
     }
 
-    function totalAssets()
-        public
-        view
-        override
-        returns (uint256 totalManagedAssets)
-    {
-        int256 value = IPerpdexExchange(exchange).getTotalAccountValue(
-            address(this)
-        );
+    function totalAssets() public view override returns (uint256 totalManagedAssets) {
+        int256 value = IPerpdexExchange(exchange).getTotalAccountValue(address(this));
         totalManagedAssets = value < 0 ? 0 : uint256(value);
     }
 
-    function convertToShares(uint256 assets)
-        external
-        view
-        override
-        returns (uint256 shares)
-    {
-        return FullMath.mulDiv(assets, totalSupply(), totalAssets());
+    function convertToShares(uint256 assets) external view override returns (uint256 shares) {
+        uint256 supply = totalSupply();
+        if (supply == 0) {
+            return FullMath.mulDiv(assets, 10**decimals(), 10**IERC20Metadata(asset).decimals());
+        }
+        return FullMath.mulDiv(assets, supply, totalAssets());
     }
 
-    function convertToAssets(uint256 shares)
-        public
-        view
-        override
-        returns (uint256 assets)
-    {
-        return FullMath.mulDiv(shares, totalAssets(), totalSupply());
+    function convertToAssets(uint256 shares) public view override returns (uint256 assets) {
+        uint256 supply = totalSupply();
+        if (supply == 0) {
+            return FullMath.mulDiv(shares, 10**IERC20Metadata(asset).decimals(), 10**decimals());
+        }
+        return FullMath.mulDiv(shares, totalAssets(), supply);
     }
 
-    function maxDeposit(address)
-        external
-        pure
-        override
-        returns (uint256 maxAssets)
-    {
+    function maxDeposit(address) external view override returns (uint256 maxAssets) {
+        if (_isMarketEmptyPool()) {
+            return 0;
+        }
         return uint256(type(int256).max);
     }
 
-    function maxMint(address)
-        external
-        pure
-        override
-        returns (uint256 maxShares)
-    {
+    function maxMint(address) external view override returns (uint256 maxShares) {
+        if (_isMarketEmptyPool()) {
+            return 0;
+        }
         return type(uint256).max;
     }
 
-    function maxWithdraw(address owner)
-        external
-        view
-        override
-        returns (uint256 maxAssets)
-    {
+    function maxWithdraw(address owner) public view override returns (uint256 maxAssets) {
         return convertToAssets(balanceOf(owner));
     }
 
-    function maxRedeem(address owner)
-        external
-        view
-        override
-        returns (uint256 maxShares)
-    {
+    function maxRedeem(address owner) public view override returns (uint256 maxShares) {
         return balanceOf(owner);
     }
 
@@ -109,21 +80,16 @@ abstract contract PerpdexTokenBase is IERC4626, ERC20 {
     ) internal view returns (int256 base, int256 quote) {
         (base, quote) = IPerpdexExchange(exchange).openPositionDry(
             IPerpdexExchange.OpenPositionDryParams({
+                trader: address(this),
                 market: market,
+                caller: address(this),
                 isBaseToQuote: isBaseToQuote,
                 isExactInput: isExactInput,
                 amount: amount,
-                oppositeAmountBound: 0
-            }),
-            address(this)
+                oppositeAmountBound: isExactInput ? 0 : type(uint256).max
+            })
         );
-        _validateOpenPositionResult(
-            isBaseToQuote,
-            isExactInput,
-            amount,
-            base,
-            quote
-        );
+        _validateOpenPositionResult(isBaseToQuote, isExactInput, amount, base, quote);
     }
 
     function _openPosition(
@@ -133,21 +99,16 @@ abstract contract PerpdexTokenBase is IERC4626, ERC20 {
     ) internal returns (int256 base, int256 quote) {
         (base, quote) = IPerpdexExchange(exchange).openPosition(
             IPerpdexExchange.OpenPositionParams({
+                trader: address(this),
                 market: market,
                 isBaseToQuote: isBaseToQuote,
                 isExactInput: isExactInput,
                 amount: amount,
-                oppositeAmountBound: 0,
+                oppositeAmountBound: isExactInput ? 0 : type(uint256).max,
                 deadline: type(uint256).max
             })
         );
-        _validateOpenPositionResult(
-            isBaseToQuote,
-            isExactInput,
-            amount,
-            base,
-            quote
-        );
+        _validateOpenPositionResult(isBaseToQuote, isExactInput, amount, base, quote);
     }
 
     function _validateOpenPositionResult(
@@ -163,10 +124,7 @@ abstract contract PerpdexTokenBase is IERC4626, ERC20 {
                 require(quote > 0, "PTB_VOPR: EI BTQ quote");
             } else {
                 require(base > 0, "PTB_VOPR: EI QTB base");
-                require(
-                    (-quote).toUint256() == amount,
-                    "PTB_VOPR: EI QTB quote"
-                );
+                require((-quote).toUint256() == amount, "PTB_VOPR: EI QTB quote");
             }
         } else {
             if (isBaseToQuote) {
@@ -187,39 +145,31 @@ abstract contract PerpdexTokenBase is IERC4626, ERC20 {
         SafeERC20.safeTransferFrom(IERC20(asset), from, to, amount);
     }
 
-    function _getERC20Name(address marketArg, string memory namePrefix)
-        private
-        view
-        returns (string memory)
-    {
+    function _getERC20Name(address marketArg, string memory namePrefix) private view returns (string memory) {
         return
             string(
                 abi.encodePacked(
                     namePrefix,
                     IPerpdexMarket(marketArg).symbol(),
-                    IERC20Metadata(
-                        IPerpdexExchange(IPerpdexMarket(marketArg).exchange())
-                            .settlementToken()
-                    ).symbol()
+                    IERC20Metadata(IPerpdexExchange(IPerpdexMarket(marketArg).exchange()).settlementToken()).symbol()
                 )
             );
     }
 
-    function _getERC20Symbol(address marketArg, string memory symbolPrefix)
-        private
-        view
-        returns (string memory)
-    {
+    function _getERC20Symbol(address marketArg, string memory symbolPrefix) private view returns (string memory) {
         return
             string(
                 abi.encodePacked(
                     symbolPrefix,
                     IPerpdexMarket(marketArg).symbol(),
-                    IERC20Metadata(
-                        IPerpdexExchange(IPerpdexMarket(marketArg).exchange())
-                            .settlementToken()
-                    ).symbol()
+                    IERC20Metadata(IPerpdexExchange(IPerpdexMarket(marketArg).exchange()).settlementToken()).symbol()
                 )
             );
+    }
+
+    function _isMarketEmptyPool() internal view returns (bool) {
+        // TODO:
+        // return IPerpdexMarket(market).poolInfo().totalLiquidity == 0;
+        return false;
     }
 }
