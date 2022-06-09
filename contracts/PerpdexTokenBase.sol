@@ -18,7 +18,6 @@ abstract contract PerpdexTokenBase is IERC4626, ERC20 {
     address public immutable override asset;
     address public immutable market;
     address public immutable exchange;
-    uint256 internal constant Q96 = 0x1000000000000000000000000;
 
     constructor(
         address marketArg,
@@ -35,7 +34,7 @@ abstract contract PerpdexTokenBase is IERC4626, ERC20 {
         totalManagedAssets = value < 0 ? 0 : uint256(value);
     }
 
-    function convertToShares(uint256 assets) external view override returns (uint256 shares) {
+    function convertToShares(uint256 assets) public view override returns (uint256 shares) {
         uint256 supply = totalSupply();
         if (supply == 0) {
             return FullMath.mulDiv(assets, 10**decimals(), 10**IERC20Metadata(asset).decimals());
@@ -51,18 +50,12 @@ abstract contract PerpdexTokenBase is IERC4626, ERC20 {
         return FullMath.mulDiv(shares, totalAssets(), supply);
     }
 
-    function maxDeposit(address) external view override returns (uint256 maxAssets) {
-        if (_isMarketEmptyPool()) {
-            return 0;
-        }
-        return uint256(type(int256).max);
+    function maxDeposit(address) public view override returns (uint256 maxAssets) {
+        return _maxOpenPosition(false, true);
     }
 
-    function maxMint(address) external view override returns (uint256 maxShares) {
-        if (_isMarketEmptyPool()) {
-            return 0;
-        }
-        return type(uint256).max;
+    function maxMint(address) public view override returns (uint256 maxShares) {
+        return _maxOpenPosition(false, false);
     }
 
     function maxWithdraw(address owner) public view override returns (uint256 maxAssets) {
@@ -73,13 +66,26 @@ abstract contract PerpdexTokenBase is IERC4626, ERC20 {
         return balanceOf(owner);
     }
 
-    function _openPositionDry(
+    function _maxOpenPosition(bool isBaseToQuote, bool isExactInput) internal view returns (uint256 maxAmount) {
+        return
+            IPerpdexExchange(exchange).maxOpenPosition(
+                IPerpdexExchange.MaxOpenPositionParams({
+                    trader: address(this),
+                    market: market,
+                    caller: address(this),
+                    isBaseToQuote: isBaseToQuote,
+                    isExactInput: isExactInput
+                })
+            );
+    }
+
+    function _previewOpenPosition(
         bool isBaseToQuote,
         bool isExactInput,
         uint256 amount
     ) internal view returns (int256 base, int256 quote) {
-        (base, quote) = IPerpdexExchange(exchange).openPositionDry(
-            IPerpdexExchange.OpenPositionDryParams({
+        (base, quote) = IPerpdexExchange(exchange).previewOpenPosition(
+            IPerpdexExchange.PreviewOpenPositionParams({
                 trader: address(this),
                 market: market,
                 caller: address(this),
@@ -111,6 +117,7 @@ abstract contract PerpdexTokenBase is IERC4626, ERC20 {
         _validateOpenPositionResult(isBaseToQuote, isExactInput, amount, base, quote);
     }
 
+    // TODO: do we need this?
     function _validateOpenPositionResult(
         bool isBaseToQuote,
         bool isExactInput,

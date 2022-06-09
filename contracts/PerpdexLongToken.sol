@@ -6,20 +6,17 @@ import { SafeCast } from "@openzeppelin/contracts/utils/SafeCast.sol";
 import { IPerpdexExchange } from "../deps/perpdex-contract/contracts/interface/IPerpdexExchange.sol";
 import { PerpdexTokenBase } from "./PerpdexTokenBase.sol";
 
+import "hardhat/console.sol";
+
 contract PerpdexLongToken is PerpdexTokenBase {
     using SafeCast for int256;
 
     constructor(address marketArg) PerpdexTokenBase(marketArg, "PerpDEX Long ", "pl") {}
 
-    function previewDeposit(uint256 assets) external view override returns (uint256 shares) {
-        if (assets == 0) {
-            return 0;
-        }
-        (int256 base, ) = _openPositionDry(false, true, assets);
-        shares = base.toUint256();
-    }
-
     function deposit(uint256 assets, address receiver) external override returns (uint256 shares) {
+        require(assets != 0, "PLT_D: deposit is zero");
+        require(assets <= maxDeposit(msg.sender), "PLT_D: deposit more than max");
+
         _assetSafeTransferFrom(msg.sender, address(this), assets);
         _depositToPerpdex(assets);
 
@@ -31,16 +28,9 @@ contract PerpdexLongToken is PerpdexTokenBase {
         emit Deposit(msg.sender, receiver, assets, shares);
     }
 
-    function previewMint(uint256 shares) public view override returns (uint256 assets) {
-        if (shares == 0) {
-            return 0;
-        }
-        (, int256 quote) = _openPositionDry(false, false, shares);
-        assets = (-quote).toUint256();
-    }
-
     function mint(uint256 shares, address receiver) external override returns (uint256 assets) {
-        require(shares != 0, "PLT_M: shares is zero");
+        require(shares != 0, "PLT_M: mint is zero");
+        require(shares <= maxMint(msg.sender), "PLT_M: mint more than max");
 
         assets = previewMint(shares);
 
@@ -53,14 +43,6 @@ contract PerpdexLongToken is PerpdexTokenBase {
         _mint(receiver, shares);
 
         emit Deposit(msg.sender, receiver, assets, shares);
-    }
-
-    function previewWithdraw(uint256 assets) public view override returns (uint256 shares) {
-        if (assets == 0) {
-            return 0;
-        }
-        (int256 base, ) = _openPositionDry(true, false, assets);
-        shares = (-base).toUint256();
     }
 
     function withdraw(
@@ -77,14 +59,6 @@ contract PerpdexLongToken is PerpdexTokenBase {
         _withdraw(owner, receiver, shares, assets);
     }
 
-    function previewRedeem(uint256 shares) external view override returns (uint256 assets) {
-        if (shares == 0) {
-            return 0;
-        }
-        (, int256 quote) = _openPositionDry(true, true, shares);
-        assets = quote.toUint256();
-    }
-
     function redeem(
         uint256 shares,
         address receiver,
@@ -99,13 +73,33 @@ contract PerpdexLongToken is PerpdexTokenBase {
         _withdraw(owner, receiver, shares, assets);
     }
 
+    function previewDeposit(uint256 assets) external view override returns (uint256 shares) {
+        (int256 base, ) = _previewOpenPosition(false, true, assets);
+        shares = base.toUint256();
+    }
+
+    function previewMint(uint256 shares) public view override returns (uint256 assets) {
+        (, int256 quote) = _previewOpenPosition(false, false, shares);
+        assets = (-quote).toUint256();
+    }
+
+    function previewWithdraw(uint256 assets) public view override returns (uint256 shares) {
+        (int256 base, ) = _previewOpenPosition(true, false, assets);
+        shares = (-base).toUint256();
+    }
+
+    function previewRedeem(uint256 shares) external view override returns (uint256 assets) {
+        (, int256 quote) = _previewOpenPosition(true, true, shares);
+        assets = quote.toUint256();
+    }
+
     function _withdraw(
         address owner,
         address receiver,
         uint256 shares,
         uint256 assets
-    ) private {
-        // check if msg.sender has allowance of owner's shares
+    ) internal {
+        // check if msg.sender has allowance of owner's vault shares
         if (msg.sender != owner) {
             _spendAllowance(owner, msg.sender, shares);
         }
