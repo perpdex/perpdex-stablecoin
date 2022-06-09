@@ -236,7 +236,7 @@ describe("PerpdexLongToken redeem", async () => {
                 revertedWith: "PLT_R: redeem is zero",
             },
             {
-                title: "reverts when shares is large",
+                title: "reverts when shares is more than max",
                 pool: {
                     base: "10000",
                     quote: "10000",
@@ -288,7 +288,6 @@ describe("PerpdexLongToken redeem", async () => {
                     await exchange.connect(owner).setIsMarketAllowed(market.address, test.isMarkeAllowed)
                 }
 
-                // alice deposits
                 // owner remove liquidity
                 if (test.removeLiquidity > 0) {
                     await exchange.connect(owner).removeLiquidity({
@@ -301,7 +300,7 @@ describe("PerpdexLongToken redeem", async () => {
                     })
                 }
 
-                // alice withdraw
+                // alice redeem
                 var assetsBefore = await weth.balanceOf(alice.address)
                 var sharesBefore = await longToken.balanceOf(alice.address)
                 var totalAssetsBefore = await longToken.totalAssets()
