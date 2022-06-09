@@ -47,28 +47,41 @@ describe("PerpdexLongToken mint", async () => {
 
     describe("maxMint", async () => {
         ;[
-            // {
-            //   title: "TODO: returns 0 when pool liquidity is zero",
-            //   pool: {
-            //     base: "0",
-            //     quote: "0",
-            //   },
-            //   expected: 0,
-            // },
             {
-                title: "returns max uint",
+                title: "returns 0 when market is not allowed",
+                pool: {
+                    base: "0",
+                    quote: "0",
+                },
+                isMarkeAllowed: false,
+                expected: "0",
+            },
+            {
+                title: "returns 0 when pool liquidity is zero",
+                pool: {
+                    base: "0",
+                    quote: "0",
+                },
+                expected: "0",
+            },
+            {
+                title: "succeeds",
                 pool: {
                     base: "10",
                     quote: "10",
                 },
-                expected: ethers.constants.MaxUint256,
+                expected: "0.246950765959598383",
             },
         ].forEach(test => {
             it(test.title, async () => {
                 // init pool
                 await initPool(exchange, market, owner, parseShares(test.pool.base), parseAssets(test.pool.base))
 
-                expect(await longToken.maxMint(alice.address)).to.eq(test.expected)
+                if (test.isMarkeAllowed !== void 0) {
+                    await exchange.connect(owner).setIsMarketAllowed(market.address, test.isMarkeAllowed)
+                }
+
+                expect(await longToken.maxMint(alice.address)).to.eq(parseShares(test.expected))
             })
         })
     })
