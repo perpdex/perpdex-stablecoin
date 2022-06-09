@@ -7,6 +7,7 @@ import { ERC20 } from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 import { SafeCast } from "@openzeppelin/contracts/utils/SafeCast.sol";
 import { FullMath } from "@uniswap/v3-core/contracts/libraries/FullMath.sol";
+import { PerpdexTokenMath } from "./lib/PerpdexTokenMath.sol";
 import { IPerpdexExchange } from "../deps/perpdex-contract/contracts/interface/IPerpdexExchange.sol";
 import { IPerpdexMarket } from "../deps/perpdex-contract/contracts/interface/IPerpdexMarket.sol";
 import { IERC4626 } from "./interface/IERC4626.sol";
@@ -45,6 +46,7 @@ abstract contract PerpdexTokenBase is IERC4626, ERC20 {
     function convertToAssets(uint256 shares) public view override returns (uint256 assets) {
         uint256 supply = totalSupply();
         if (supply == 0) {
+            // TODO: PerpMath?
             return FullMath.mulDiv(shares, 10**IERC20Metadata(asset).decimals(), 10**decimals());
         }
         return FullMath.mulDiv(shares, totalAssets(), supply);
@@ -59,11 +61,11 @@ abstract contract PerpdexTokenBase is IERC4626, ERC20 {
     }
 
     function maxWithdraw(address owner) public view override returns (uint256 maxAssets) {
-        return convertToAssets(balanceOf(owner));
+        return PerpdexTokenMath.minUint256(convertToAssets(balanceOf(owner)), _maxOpenPosition(true, false));
     }
 
     function maxRedeem(address owner) public view override returns (uint256 maxShares) {
-        return balanceOf(owner);
+        return PerpdexTokenMath.minUint256(balanceOf(owner), _maxOpenPosition(true, true));
     }
 
     function _maxOpenPosition(bool isBaseToQuote, bool isExactInput) internal view returns (uint256 maxAmount) {
