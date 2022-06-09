@@ -83,7 +83,7 @@ describe("PerpdexLongToken base", async () => {
 
     describe("convertToShares", async () => {
         beforeEach(async () => {
-            // approve max
+            // alice approve longToken of max assets
             await weth.approveForce(alice.address, longToken.address, ethers.constants.MaxUint256)
             await weth.approveForce(longToken.address, exchange.address, ethers.constants.MaxUint256)
         })
@@ -128,7 +128,7 @@ describe("PerpdexLongToken base", async () => {
 
     describe("convertToAssets", async () => {
         beforeEach(async () => {
-            // approve max
+            // alice approve longToken of max assets
             await weth.approveForce(alice.address, longToken.address, ethers.constants.MaxUint256)
             await weth.approveForce(longToken.address, exchange.address, ethers.constants.MaxUint256)
         })
