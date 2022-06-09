@@ -47,31 +47,68 @@ describe("PerpdexLongToken redeem", async () => {
 
     describe("maxRedeem", async () => {
         beforeEach(async () => {
-            // approve max
+            // alice approve longToken of max assets
             await weth.approveForce(alice.address, longToken.address, ethers.constants.MaxUint256)
             await weth.approveForce(longToken.address, exchange.address, ethers.constants.MaxUint256)
         })
         ;[
             {
-                title: "return owner's shares",
+                title: "returns 0 when market is not allowed",
                 pool: {
                     base: "10000",
                     quote: "10000",
                 },
+                isMarkeAllowed: false,
+                depositAssets: "10",
+                expected: "0",
+            },
+            {
+                title: "TODO: returns 0 when pool liquidity is zero",
+                pool: {
+                    base: "0",
+                    quote: "0",
+                },
+                isMarkeAllowed: true,
+                depositAssets: "10",
+                expected: "0",
+            },
+            {
+                title: "returns owner's shares",
+                pool: {
+                    base: "10000",
+                    quote: "10000",
+                },
+                isMarkeAllowed: true,
                 depositAssets: "10",
                 expected: "9.990009990009990009",
+            },
+            {
+                title: "returns owner's 0 shares",
+                pool: {
+                    base: "10000",
+                    quote: "10000",
+                },
+                isMarkeAllowed: true,
+                depositAssets: "0",
+                expected: "0",
             },
         ].forEach(test => {
             it(test.title, async () => {
                 // init pool
                 await initPool(exchange, market, owner, parseShares(test.pool.base), parseAssets(test.pool.base))
 
+                await exchange.connect(owner).setIsMarketAllowed(market.address, test.isMarkeAllowed)
+
                 // alice deposits
                 await weth.connect(owner).mint(alice.address, parseAssets(test.depositAssets))
-                await longToken.connect(alice).deposit(parseAssets(test.depositAssets), alice.address)
+
+                // deposit only when market is allowed and pool has liquidity
+                if (test.isMarkeAllowed && test.pool.base !== "0" && test.depositAssets !== "0") {
+                    await longToken.connect(alice).deposit(parseAssets(test.depositAssets), alice.address)
+                }
 
                 // alice maxRedeem
-                expect(await longToken.maxRedeem(alice.address)).to.eq(parseAssets(test.expected))
+                expect(await longToken.connect(alice).maxRedeem(alice.address)).to.eq(parseAssets(test.expected))
             })
         })
     })
