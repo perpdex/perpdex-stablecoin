@@ -70,7 +70,7 @@ describe("PerpdexLongToken mint", async () => {
                     base: "10",
                     quote: "10",
                 },
-                expected: "0.246950765959598383",
+                expected: "0.240999270514668206",
             },
         ].forEach(test => {
             it(test.title, async () => {
@@ -112,7 +112,7 @@ describe("PerpdexLongToken mint", async () => {
                 },
                 aliceQuoteAssets: "1000",
                 mintShares: "100",
-                revertedWith: "PL_SD: output is zero",
+                revertedWith: "SafeMath: subtraction overflow",
             },
             {
                 title: "reverts when assets is zero",
@@ -132,7 +132,7 @@ describe("PerpdexLongToken mint", async () => {
                 },
                 aliceQuoteAssets: "1000",
                 mintShares: "100",
-                revertedWith: "PLL_C: price limit",
+                revertedWith: "SafeMath: subtraction overflow",
             },
             {
                 title: "succeeds",
@@ -194,7 +194,7 @@ describe("PerpdexLongToken mint", async () => {
                 },
                 aliceQuoteAssets: "1000",
                 mintShares: "100",
-                revertedWith: "TODO: ?",
+                revertedWith: "PLT_M: mint more than max", // maxMint == 0
             },
             {
                 title: "reverts when assets is zero",
