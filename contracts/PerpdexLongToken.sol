@@ -20,8 +20,8 @@ contract PerpdexLongToken is PerpdexTokenBase {
     }
 
     function deposit(uint256 assets, address receiver) external override returns (uint256 shares) {
-        _transferFrom(msg.sender, address(this), assets);
-        IPerpdexExchange(exchange).deposit(assets);
+        _assetSafeTransferFrom(msg.sender, address(this), assets);
+        _depositToPerpdex(assets);
 
         (int256 base, ) = _openPosition(false, true, assets);
 
@@ -43,8 +43,9 @@ contract PerpdexLongToken is PerpdexTokenBase {
         require(shares != 0, "PLT_M: shares is zero");
 
         assets = previewMint(shares);
-        _transferFrom(msg.sender, address(this), assets);
-        IPerpdexExchange(exchange).deposit(assets);
+
+        _assetSafeTransferFrom(msg.sender, address(this), assets);
+        _depositToPerpdex(assets);
 
         (, int256 quote) = _openPosition(false, false, shares);
         require((-quote).toUint256() == assets, "PLT_M: assets not fully used");
@@ -73,12 +74,7 @@ contract PerpdexLongToken is PerpdexTokenBase {
         (int256 base, ) = _openPosition(true, false, assets);
         shares = (-base).toUint256();
 
-        IPerpdexExchange(exchange).withdraw(assets);
-        _transferFrom(address(this), receiver, assets);
-
-        _burn(owner, shares);
-
-        emit Withdraw(msg.sender, receiver, owner, assets, shares);
+        _withdraw(owner, receiver, shares, assets);
     }
 
     function previewRedeem(uint256 shares) external view override returns (uint256 assets) {
@@ -100,9 +96,24 @@ contract PerpdexLongToken is PerpdexTokenBase {
         (, int256 quote) = _openPosition(true, true, shares);
         assets = quote.toUint256();
 
-        IPerpdexExchange(exchange).withdraw(assets);
-        _transferFrom(address(this), receiver, assets);
+        _withdraw(owner, receiver, shares, assets);
+    }
+
+    function _withdraw(
+        address owner,
+        address receiver,
+        uint256 shares,
+        uint256 assets
+    ) private {
+        // check if msg.sender has allowance of owner's shares
+        if (msg.sender != owner) {
+            _spendAllowance(owner, msg.sender, shares);
+        }
         _burn(owner, shares);
+
+        // withdraw
+        IPerpdexExchange(exchange).withdraw(assets);
+        _assetSafeTransfer(receiver, assets);
 
         emit Withdraw(msg.sender, receiver, owner, assets, shares);
     }

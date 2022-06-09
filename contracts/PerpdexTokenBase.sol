@@ -137,7 +137,16 @@ abstract contract PerpdexTokenBase is IERC4626, ERC20 {
         }
     }
 
-    function _transferFrom(
+    function _depositToPerpdex(uint256 amount) internal {
+        IERC20(asset).approve(exchange, type(uint256).max);
+        IPerpdexExchange(exchange).deposit(amount);
+    }
+
+    function _assetSafeTransfer(address to, uint256 amount) internal {
+        SafeERC20.safeTransfer(IERC20(asset), to, amount);
+    }
+
+    function _assetSafeTransferFrom(
         address from,
         address to,
         uint256 amount
@@ -171,5 +180,19 @@ abstract contract PerpdexTokenBase is IERC4626, ERC20 {
         // TODO:
         // return IPerpdexMarket(market).poolInfo().totalLiquidity == 0;
         return false;
+    }
+
+    // https://github.com/OpenZeppelin/openzeppelin-contracts/commit/c5a6cae8981d8005e22243b681745af92d44d1fc
+    function _spendAllowance(
+        address owner,
+        address spender,
+        uint256 amount
+    ) internal virtual {
+        uint256 currentAllowance = allowance(owner, spender);
+        if (currentAllowance != type(uint256).max) {
+            // solhint-disable-next-line reason-string
+            require(amount <= currentAllowance, "ERC20: transfer amount exceeds allowance");
+            _approve(owner, spender, currentAllowance - amount);
+        }
     }
 }
