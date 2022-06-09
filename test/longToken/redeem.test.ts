@@ -115,30 +115,61 @@ describe("PerpdexLongToken redeem", async () => {
 
     describe("previewRedeem", async () => {
         beforeEach(async () => {
-            // approve max
+            // alice approve longToken of max assets
             await weth.approveForce(alice.address, longToken.address, ethers.constants.MaxUint256)
-            await weth.approveForce(longToken.address, exchange.address, ethers.constants.MaxUint256)
-            await weth.approveForce(longToken.address, exchange.address, ethers.constants.MaxUint256)
-            await weth.approveForce(exchange.address, longToken.address, ethers.constants.MaxUint256)
-            await weth.approveForce(longToken.address, longToken.address, ethers.constants.MaxUint256)
         })
         ;[
             {
-                title: "returns 0 when redeem is zero",
+                title: "reverts when market is not allowed",
                 pool: {
                     base: "10000",
                     quote: "10000",
                 },
+                isMarkeAllowed: false,
                 depositAssets: "10",
-                redeemShares: "0",
-                withdrawAssets: "0",
+                redeemShares: "5",
+                revertedWith: "PE_CMA: market not allowed",
             },
             {
-                title: "returns ideal shares",
+                title: "reverts when shares is zero",
+                pool: {
+                    base: "0",
+                    quote: "0",
+                },
+                isMarkeAllowed: true,
+                depositAssets: "10",
+                redeemShares: "0",
+                revertedWith: "", // math error without message
+            },
+            {
+                title: "reverts when liquidity is zero",
+                pool: {
+                    base: "0",
+                    quote: "0",
+                },
+                isMarkeAllowed: true,
+                depositAssets: "0",
+                redeemShares: "100",
+                revertedWith: "PL_SD: output is zero",
+            },
+            {
+                title: "reverts when liquidity is not enought(shares is large)",
+                pool: {
+                    base: "100",
+                    quote: "100",
+                },
+                isMarkeAllowed: true,
+                depositAssets: "1",
+                redeemShares: "100",
+                revertedWith: "PLL_C: price limit",
+            },
+            {
+                title: "succeeds",
                 pool: {
                     base: "10000",
                     quote: "10000",
                 },
+                isMarkeAllowed: true,
                 depositAssets: "10",
                 redeemShares: "4.992508740634677667",
                 withdrawAssets: "5",
@@ -151,12 +182,25 @@ describe("PerpdexLongToken redeem", async () => {
                 // alice deposits
                 var depositAssets = parseAssets(test.depositAssets)
                 await weth.connect(owner).mint(alice.address, depositAssets)
-                await longToken.connect(alice).deposit(depositAssets, alice.address)
+
+                // deposit only when pool has liquidity
+                if (test.pool.base !== "0" && test.depositAssets !== "0") {
+                    await longToken.connect(alice).deposit(parseAssets(test.depositAssets), alice.address)
+                }
+
+                if (test.isMarkeAllowed !== void 0) {
+                    await exchange.connect(owner).setIsMarketAllowed(market.address, test.isMarkeAllowed)
+                }
 
                 // alice previews redeem
-                expect(await longToken.connect(alice).previewRedeem(parseShares(test.redeemShares))).to.eq(
-                    parseAssets(test.withdrawAssets),
-                )
+                var subject = longToken.connect(alice).previewRedeem(parseShares(test.redeemShares))
+
+                // assert
+                if (test.revertedWith !== void 0) {
+                    await expect(subject).to.revertedWith(test.revertedWith)
+                } else {
+                    expect(await subject).to.eq(parseAssets(test.withdrawAssets))
+                }
             })
         })
     })
