@@ -171,50 +171,60 @@ describe("PerpdexLongToken mint", async () => {
 
     describe("mint", async () => {
         beforeEach(async () => {
-            // approve max
+            // alice approve longToken of max assets
             await weth.approveForce(alice.address, longToken.address, ethers.constants.MaxUint256)
-            await weth.approveForce(longToken.address, exchange.address, ethers.constants.MaxUint256)
         })
         ;[
             {
-                title: "reverts when shares is zero",
+                title: "reverts when market is not allowed",
                 pool: {
-                    base: "1",
-                    quote: "1",
+                    base: "10",
+                    quote: "10",
                 },
-                aliceAssetsBefore: "100",
+                isMarkeAllowed: false,
+                aliceQuoteAssets: "1000",
+                mintShares: "100",
+                revertedWith: "PLT_M: mint more than max", // maxMint == 0
+            },
+            {
+                title: "reverts when liquidity is zero",
+                pool: {
+                    base: "0",
+                    quote: "0",
+                },
+                aliceQuoteAssets: "1000",
+                mintShares: "100",
+                revertedWith: "TODO: ?",
+            },
+            {
+                title: "reverts when assets is zero",
+                pool: {
+                    base: "10",
+                    quote: "10",
+                },
+                aliceQuoteAssets: "1000",
                 mintShares: "0",
-                revertedWith: "PLT_M: shares is zero",
+                revertedWith: "PLT_M: mint is zero",
             },
             {
-                title: "reverts when pool does not have enough liquidity",
+                title: "reverts when assets is too large",
                 pool: {
-                    base: "1",
-                    quote: "1",
+                    base: "10",
+                    quote: "10",
                 },
-                aliceAssetsBefore: "100",
-                mintShares: "10",
-                revertedWith: "SafeMath: subtraction overflow",
+                aliceQuoteAssets: "1000",
+                mintShares: "100",
+                revertedWith: "PLT_M: mint more than max",
             },
             {
-                title: "reverts when alice does not have enough WETH",
-                pool: {
-                    base: "10000",
-                    quote: "10000",
-                },
-                aliceAssetsBefore: "5",
-                mintShares: "10",
-                revertedWith: "ERC20: transfer amount exceeds balance",
-            },
-            {
-                title: "successes when alice has enough WETH",
+                title: "succeeds",
                 pool: {
                     base: "10000",
                     quote: "10000",
                 },
-                aliceAssetsBefore: "50",
+                aliceQuoteAssets: "50",
                 mintShares: "20",
-                assetsAmount: "20.040080160320641283",
+                depositedAssets: "20.040080160320641283",
                 totalAssetsAfter: "20.080240641603848980",
                 aliceAssetsAfter: "29.959919839679358717",
             },
@@ -224,26 +234,25 @@ describe("PerpdexLongToken mint", async () => {
                 await initPool(exchange, market, owner, parseShares(test.pool.base), parseAssets(test.pool.base))
 
                 // alice balance
-                await weth.connect(owner).mint(alice.address, parseAssets(test.aliceAssetsBefore))
+                await weth.connect(owner).mint(alice.address, parseAssets(test.aliceQuoteAssets))
 
                 // alice mint preview
                 var mintShares = parseShares(test.mintShares)
-                // var previewRes = await longToken
-                //     .connect(alice)
-                //     .previewMint(mintShares);
+                var previewSubject = longToken.connect(alice).previewMint(mintShares)
 
                 // alice mints
-                var mintRes = expect(longToken.connect(alice).mint(mintShares, alice.address))
+                var mintSubject = longToken.connect(alice).mint(mintShares, alice.address)
 
                 // assert
                 if (test.revertedWith !== void 0) {
-                    await mintRes.to.revertedWith(test.revertedWith)
+                    await expect(previewSubject).to.reverted
+                    await expect(mintSubject).to.revertedWith(test.revertedWith)
                 } else {
-                    var assetsAmount = parseAssets(test.assetsAmount)
+                    var depositedAssets = parseAssets(test.depositedAssets)
                     // event
-                    await mintRes.to
-                        .emit(longToken, "Deposit")
-                        .withArgs(alice.address, alice.address, assetsAmount, mintShares)
+                    expect(await mintSubject)
+                        .to.emit(longToken, "Deposit")
+                        .withArgs(alice.address, alice.address, depositedAssets, mintShares)
 
                     // share
                     expect(await longToken.totalSupply()).to.eq(mintShares)
@@ -254,7 +263,7 @@ describe("PerpdexLongToken mint", async () => {
                     expect(await weth.balanceOf(alice.address)).to.eq(parseAssets(test.aliceAssetsAfter))
 
                     // preview >= assets
-                    // expect(previewRes).to.gte(assetsAmount);
+                    expect(await previewSubject).to.gte(depositedAssets)
                 }
             })
         })
