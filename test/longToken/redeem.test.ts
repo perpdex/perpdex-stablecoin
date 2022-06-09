@@ -205,36 +205,46 @@ describe("PerpdexLongToken redeem", async () => {
         })
     })
 
-    describe("withdraw", async () => {
+    describe("redeem", async () => {
         beforeEach(async () => {
-            // approve max
+            // alice approve longToken of max assets
             await weth.approveForce(alice.address, longToken.address, ethers.constants.MaxUint256)
-            await weth.approveForce(longToken.address, alice.address, ethers.constants.MaxUint256)
-            await weth.approveForce(longToken.address, exchange.address, ethers.constants.MaxUint256)
-            await weth.approveForce(exchange.address, longToken.address, ethers.constants.MaxUint256)
-            await weth.approveForce(longToken.address, longToken.address, ethers.constants.MaxUint256)
         })
         ;[
             {
-                title: "reverts when withdraw is zero",
+                title: "reverts when market is not allowed",
                 pool: {
                     base: "10000",
                     quote: "10000",
                 },
+                isMarkeAllowed: false,
+                depositAssets: "10",
+                removeLiquidity: 0,
+                redeemShares: "5",
+                revertedWith: "PLT_R: redeem more than max", // maxRedeem is zero
+            },
+            {
+                title: "reverts when shares is zero",
+                pool: {
+                    base: "10000",
+                    quote: "10000",
+                },
+                isMarkeAllowed: true,
                 depositAssets: "10",
                 removeLiquidity: 0,
                 redeemShares: "0",
                 revertedWith: "PLT_R: redeem is zero",
             },
             {
-                title: "reverts when withdraw assets is more than max",
+                title: "reverts when shares is large",
                 pool: {
                     base: "10000",
                     quote: "10000",
                 },
+                isMarkeAllowed: true,
                 depositAssets: "10",
                 removeLiquidity: 0,
-                redeemShares: "20",
+                redeemShares: "100",
                 revertedWith: "PLT_R: redeem more than max",
             },
             // TODO: overflow occurred when removing liquidity
@@ -250,11 +260,12 @@ describe("PerpdexLongToken redeem", async () => {
             //     revertedWith: "TL_OP: normal order price limit",
             // },
             {
-                title: "success",
+                title: "succeeds",
                 pool: {
                     base: "10000",
                     quote: "10000",
                 },
+                isMarkeAllowed: true,
                 depositAssets: "10",
                 removeLiquidity: 0,
                 redeemShares: "4.992508740634677667",
@@ -265,11 +276,19 @@ describe("PerpdexLongToken redeem", async () => {
                 // pool
                 await initPool(exchange, market, owner, parseShares(test.pool.base), parseAssets(test.pool.base))
 
-                // alice deposits
                 var depositAssets = parseAssets(test.depositAssets)
                 await weth.connect(owner).mint(alice.address, depositAssets)
-                await longToken.connect(alice).deposit(depositAssets, alice.address)
 
+                // deposit only when pool has liquidity
+                if (test.pool.base !== "0" && test.depositAssets !== "0") {
+                    await longToken.connect(alice).deposit(parseAssets(test.depositAssets), alice.address)
+                }
+
+                if (test.isMarkeAllowed !== void 0) {
+                    await exchange.connect(owner).setIsMarketAllowed(market.address, test.isMarkeAllowed)
+                }
+
+                // alice deposits
                 // owner remove liquidity
                 if (test.removeLiquidity > 0) {
                     await exchange.connect(owner).removeLiquidity({
@@ -289,17 +308,18 @@ describe("PerpdexLongToken redeem", async () => {
                 var totalSharesBefore = await longToken.totalSupply()
 
                 var redeemShares = parseShares(test.redeemShares)
-                var redeemRes = expect(longToken.connect(alice).redeem(redeemShares, alice.address, alice.address))
+                var previewSubject = longToken.connect(alice).previewRedeem(redeemShares)
+                var redeemSubject = longToken.connect(alice).redeem(redeemShares, alice.address, alice.address)
 
                 // assert
                 if (test.revertedWith !== void 0) {
-                    await redeemRes.to.revertedWith(test.revertedWith)
+                    await expect(redeemSubject).to.revertedWith(test.revertedWith)
                 } else {
                     var withdrawAssets = parseAssets(test.withdrawAssets)
 
                     // event
-                    await redeemRes.to
-                        .emit(longToken, "Withdraw")
+                    expect(await redeemSubject)
+                        .to.emit(longToken, "Withdraw")
                         .withArgs(alice.address, alice.address, alice.address, withdrawAssets, redeemShares)
 
                     // share
@@ -309,6 +329,9 @@ describe("PerpdexLongToken redeem", async () => {
                     // asset
                     expect(await longToken.totalAssets()).to.lt(totalAssetsBefore)
                     expect(await weth.balanceOf(alice.address)).to.eq(assetsBefore.add(withdrawAssets))
+
+                    // preview <= assets
+                    expect(await previewSubject).to.lte(withdrawAssets)
                 }
             })
         })
