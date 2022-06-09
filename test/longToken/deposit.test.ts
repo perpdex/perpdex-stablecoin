@@ -70,7 +70,7 @@ describe("PerpdexLongToken deposit", async () => {
                     base: "10",
                     quote: "10",
                 },
-                expected: "0.240999270514668206",
+                expected: "0.246950765959598383",
             },
         ].forEach(test => {
             it(test.title, async () => {
@@ -193,7 +193,7 @@ describe("PerpdexLongToken deposit", async () => {
                 },
                 aliceQuoteAssets: "1000",
                 depositAssets: "100",
-                revertedWith: "TODO: ?",
+                revertedWith: "PLT_D: deposit more than max", // maxDeposit == 0
             },
             {
                 title: "reverts when assets is zero",
