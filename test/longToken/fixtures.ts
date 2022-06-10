@@ -12,16 +12,11 @@ export interface PerpdexExchangeFixture {
     owner: Wallet
     alice: Wallet
     bob: Wallet
+    charlie: Wallet
 }
 
-interface Params {
-    linear: Boolean
-}
-
-export function createPerpdexExchangeFixture(
-    params: Params = { linear: false },
-): (wallets, provider) => Promise<PerpdexExchangeFixture> {
-    return async ([owner, alice, bob], provider): Promise<PerpdexExchangeFixture> => {
+export function createPerpdexExchangeFixture(): (wallets, provider) => Promise<PerpdexExchangeFixture> {
+    return async ([owner, alice, bob, charlie], provider): Promise<PerpdexExchangeFixture> => {
         let settlementToken = hre.ethers.constants.AddressZero
         const tokenFactory = await ethers.getContractFactory("TestERC20")
         let weth = (await tokenFactory.deploy("TestWETH", "WETH", 18)) as TestERC20
@@ -60,6 +55,7 @@ export function createPerpdexExchangeFixture(
             owner,
             alice,
             bob,
+            charlie,
         }
     }
 }
