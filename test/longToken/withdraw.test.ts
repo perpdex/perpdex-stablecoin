@@ -137,7 +137,7 @@ describe("PerpdexLongToken withdraw", async () => {
                 owner: "alice",
                 receiver: "alice",
                 revertedWithPreview: "PE_CMA: market not allowed",
-                revertedWith: "PLT_W: withdraw more than max", // maxWithdraw == 0
+                revertedWith: "PE_CMA: market not allowed", // maxWithdraw == 0
             },
             {
                 title: "both reverts when assets is zero",
@@ -153,7 +153,7 @@ describe("PerpdexLongToken withdraw", async () => {
                 owner: "alice",
                 receiver: "alice",
                 revertedWithPreview: "PL_SD: output is zero",
-                revertedWith: "PLT_W: withdraw is zero",
+                revertedWith: "PL_SD: output is zero",
             },
             {
                 title: "withdraw reverts and preview succeeds when assets is more than max",
@@ -169,7 +169,7 @@ describe("PerpdexLongToken withdraw", async () => {
                 owner: "alice",
                 receiver: "alice",
                 burnedSharesPreview: "20.000020000020000021",
-                revertedWith: "PLT_W: withdraw more than max",
+                revertedWith: "ERC20: burn amount exceeds balance",
             },
             {
                 title: "withdraw reverts and preview succeeds when alice withdraws unapproved bob's assets",

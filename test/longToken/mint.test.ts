@@ -184,7 +184,7 @@ describe("PerpdexLongToken mint", async () => {
                 isMarkeAllowed: false,
                 aliceQuoteAssets: "1000",
                 mintShares: "100",
-                revertedWith: "PLT_M: mint more than max", // maxMint == 0
+                revertedWith: "PM_PS: too large amount", // maxMint == 0
             },
             {
                 title: "reverts when liquidity is zero",
@@ -194,7 +194,7 @@ describe("PerpdexLongToken mint", async () => {
                 },
                 aliceQuoteAssets: "1000",
                 mintShares: "100",
-                revertedWith: "PLT_M: mint more than max", // maxMint == 0
+                revertedWith: "PM_PS: too large amount", // maxMint == 0
             },
             {
                 title: "reverts when assets is zero",
@@ -204,7 +204,7 @@ describe("PerpdexLongToken mint", async () => {
                 },
                 aliceQuoteAssets: "1000",
                 mintShares: "0",
-                revertedWith: "PLT_M: mint is zero",
+                revertedWith: "PL_SD: output is zero",
             },
             {
                 title: "reverts when assets is too large",
@@ -214,7 +214,7 @@ describe("PerpdexLongToken mint", async () => {
                 },
                 aliceQuoteAssets: "1000",
                 mintShares: "100",
-                revertedWith: "PLT_M: mint more than max",
+                revertedWith: "PM_PS: too large amount",
             },
             {
                 title: "succeeds",

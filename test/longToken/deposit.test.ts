@@ -183,7 +183,7 @@ describe("PerpdexLongToken deposit", async () => {
                 isMarkeAllowed: false,
                 aliceQuoteAssets: "1000",
                 depositAssets: "100",
-                revertedWith: "PLT_D: deposit more than max",
+                revertedWith: "PE_CMA: market not allowed",
             },
             {
                 title: "reverts when liquidity is zero",
@@ -193,7 +193,7 @@ describe("PerpdexLongToken deposit", async () => {
                 },
                 aliceQuoteAssets: "1000",
                 depositAssets: "100",
-                revertedWith: "PLT_D: deposit more than max", // maxDeposit == 0
+                revertedWith: "PM_S: too large amount", // maxDeposit == 0
             },
             {
                 title: "reverts when assets is zero",
@@ -203,7 +203,7 @@ describe("PerpdexLongToken deposit", async () => {
                 },
                 aliceQuoteAssets: "1000",
                 depositAssets: "0",
-                revertedWith: "PLT_D: deposit is zero",
+                revertedWith: "VL_D: zero amount",
             },
             {
                 title: "reverts when assets is too large",
@@ -213,7 +213,7 @@ describe("PerpdexLongToken deposit", async () => {
                 },
                 aliceQuoteAssets: "1000",
                 depositAssets: "100",
-                revertedWith: "PLT_D: deposit more than max",
+                revertedWith: "PM_S: too large amount",
             },
             {
                 title: "succeeds",

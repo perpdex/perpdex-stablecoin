@@ -12,9 +12,6 @@ contract PerpdexLongToken is PerpdexTokenBase {
     constructor(address marketArg) PerpdexTokenBase(marketArg, "PerpDEX Long ", "pl") {}
 
     function deposit(uint256 assets, address receiver) external override returns (uint256 shares) {
-        require(assets != 0, "PLT_D: deposit is zero");
-        require(assets <= maxDeposit(msg.sender), "PLT_D: deposit more than max");
-
         _assetSafeTransferFrom(msg.sender, address(this), assets);
         _depositToPerpdex(assets);
 
@@ -26,16 +23,14 @@ contract PerpdexLongToken is PerpdexTokenBase {
     }
 
     function mint(uint256 shares, address receiver) external override returns (uint256 assets) {
-        require(shares != 0, "PLT_M: mint is zero");
-        require(shares <= maxMint(msg.sender), "PLT_M: mint more than max");
-
         assets = previewMint(shares);
 
         _assetSafeTransferFrom(msg.sender, address(this), assets);
         _depositToPerpdex(assets);
 
         uint256 oppositeAmount = _openPosition(false, false, shares);
-        require(oppositeAmount == assets, "PLT_M: assets not fully used");
+        // assets not fully used
+        require(oppositeAmount == assets, "PLT_M: (never reach) ANFU");
 
         _mint(receiver, shares);
 
@@ -47,9 +42,6 @@ contract PerpdexLongToken is PerpdexTokenBase {
         address receiver,
         address owner
     ) external override returns (uint256 shares) {
-        require(assets != 0, "PLT_W: withdraw is zero");
-        require(assets <= maxWithdraw(owner), "PLT_W: withdraw more than max");
-
         shares = _openPosition(true, false, assets);
 
         _withdraw(owner, receiver, shares, assets);
@@ -60,9 +52,6 @@ contract PerpdexLongToken is PerpdexTokenBase {
         address receiver,
         address owner
     ) external override returns (uint256 assets) {
-        require(shares != 0, "PLT_R: redeem is zero");
-        require(shares <= maxRedeem(owner), "PLT_R: redeem more than max");
-
         assets = _openPosition(true, true, shares);
 
         _withdraw(owner, receiver, shares, assets);
