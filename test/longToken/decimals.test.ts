@@ -169,7 +169,7 @@ describe("PerpdexLongToken base decimals", async () => {
                 }
 
                 expect(await longToken.convertToAssets(parseShares(test.convertShares))).to.eq(
-                    parseShares(test.expected),
+                    parseAssets(test.expected),
                 )
             })
         })
