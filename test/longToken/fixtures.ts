@@ -15,11 +15,17 @@ export interface PerpdexExchangeFixture {
     charlie: Wallet
 }
 
-export function createPerpdexExchangeFixture(): (wallets, provider) => Promise<PerpdexExchangeFixture> {
+interface FixtureParams {
+    wethDecimals: number
+}
+
+export function createPerpdexExchangeFixture(
+    params: FixtureParams = { wethDecimals: 18 },
+): (wallets, provider) => Promise<PerpdexExchangeFixture> {
     return async ([owner, alice, bob, charlie], provider): Promise<PerpdexExchangeFixture> => {
         let settlementToken = hre.ethers.constants.AddressZero
         const tokenFactory = await ethers.getContractFactory("TestERC20")
-        let weth = (await tokenFactory.deploy("TestWETH", "WETH", 18)) as TestERC20
+        let weth = (await tokenFactory.deploy("TestWETH", "WETH", params.wethDecimals)) as TestERC20
         settlementToken = weth.address
 
         // exchange
