@@ -99,7 +99,7 @@ describe("PerpdexLongToken withdraw", async () => {
         ].forEach(test => {
             it(test.title, async () => {
                 // init pool
-                await initPool(exchange, market, owner, parseShares(test.pool.base), parseAssets(test.pool.base))
+                await initPool(exchange, market, owner, parseShares(test.pool.base), parseAssets(test.pool.quote))
 
                 // alice deposits
                 await weth.connect(owner).mint(alice.address, parseAssets(test.depositAssets))
@@ -238,7 +238,7 @@ describe("PerpdexLongToken withdraw", async () => {
         ].forEach(test => {
             it(test.title, async () => {
                 // pool
-                await initPool(exchange, market, owner, parseShares(test.pool.base), parseAssets(test.pool.base))
+                await initPool(exchange, market, owner, parseShares(test.pool.base), parseAssets(test.pool.quote))
 
                 var caller = toWallet(test.caller)
                 var owner_ = toWallet(test.owner)

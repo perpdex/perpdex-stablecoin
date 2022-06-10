@@ -74,7 +74,7 @@ describe("PerpdexLongToken deposit", async () => {
             },
         ].forEach(test => {
             it(test.title, async () => {
-                await initPool(exchange, market, owner, parseShares(test.pool.base), parseAssets(test.pool.base))
+                await initPool(exchange, market, owner, parseShares(test.pool.base), parseAssets(test.pool.quote))
 
                 if (test.isMarkeAllowed !== void 0) {
                     await exchange.connect(owner).setIsMarketAllowed(market.address, test.isMarkeAllowed)
@@ -145,7 +145,7 @@ describe("PerpdexLongToken deposit", async () => {
         ].forEach(test => {
             it(test.title, async () => {
                 // pool
-                await initPool(exchange, market, owner, parseShares(test.pool.base), parseAssets(test.pool.base))
+                await initPool(exchange, market, owner, parseShares(test.pool.base), parseAssets(test.pool.quote))
 
                 if (test.isMarkeAllowed !== void 0) {
                     await exchange.connect(owner).setIsMarketAllowed(market.address, test.isMarkeAllowed)
@@ -230,7 +230,7 @@ describe("PerpdexLongToken deposit", async () => {
         ].forEach(test => {
             it(test.title, async () => {
                 // pool
-                await initPool(exchange, market, owner, parseShares(test.pool.base), parseAssets(test.pool.base))
+                await initPool(exchange, market, owner, parseShares(test.pool.base), parseAssets(test.pool.quote))
 
                 if (test.isMarkeAllowed !== void 0) {
                     await exchange.connect(owner).setIsMarketAllowed(market.address, test.isMarkeAllowed)
