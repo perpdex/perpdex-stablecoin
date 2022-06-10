@@ -20,6 +20,7 @@ describe("PerpdexLongToken redeem", async () => {
     let owner: Wallet
     let alice: Wallet
     let bob: Wallet
+    let charlie: Wallet
 
     beforeEach(async () => {
         fixture = await loadFixture(createPerpdexExchangeFixture())
@@ -35,6 +36,7 @@ describe("PerpdexLongToken redeem", async () => {
         owner = fixture.owner
         alice = fixture.alice
         bob = fixture.bob
+        charlie = fixture.charlie
     })
 
     function parseAssets(amount: string) {
@@ -43,6 +45,18 @@ describe("PerpdexLongToken redeem", async () => {
 
     function parseShares(amount: string) {
         return parseUnits(amount, longTokenDecimals)
+    }
+
+    function toWallet(who: string) {
+        if (who === "alice") {
+            return alice
+        }
+        if (who === "bob") {
+            return bob
+        }
+        if (who === "charlie") {
+            return charlie
+        }
     }
 
     describe("maxRedeem", async () => {
@@ -63,7 +77,7 @@ describe("PerpdexLongToken redeem", async () => {
                 expected: "0",
             },
             {
-                title: "TODO: returns 0 when pool liquidity is zero",
+                title: "returns 0 when pool liquidity is zero",
                 pool: {
                     base: "0",
                     quote: "0",
@@ -113,217 +127,6 @@ describe("PerpdexLongToken redeem", async () => {
         })
     })
 
-    describe("previewRedeem", async () => {
-        beforeEach(async () => {
-            // alice approve longToken of max assets
-            await weth.approveForce(alice.address, longToken.address, ethers.constants.MaxUint256)
-        })
-        ;[
-            {
-                title: "reverts when market is not allowed",
-                pool: {
-                    base: "10000",
-                    quote: "10000",
-                },
-                isMarkeAllowed: false,
-                depositAssets: "10",
-                redeemShares: "5",
-                revertedWith: "PE_CMA: market not allowed",
-            },
-            {
-                title: "reverts when shares is zero",
-                pool: {
-                    base: "0",
-                    quote: "0",
-                },
-                isMarkeAllowed: true,
-                depositAssets: "10",
-                redeemShares: "0",
-                revertedWith: "", // math error without message
-            },
-            {
-                title: "reverts when liquidity is zero",
-                pool: {
-                    base: "0",
-                    quote: "0",
-                },
-                isMarkeAllowed: true,
-                depositAssets: "0",
-                redeemShares: "100",
-                revertedWith: "PL_SD: output is zero",
-            },
-            {
-                title: "reverts when liquidity is not enought(shares is large)",
-                pool: {
-                    base: "100",
-                    quote: "100",
-                },
-                isMarkeAllowed: true,
-                depositAssets: "1",
-                redeemShares: "100",
-                revertedWith: "PLL_C: price limit",
-            },
-            {
-                title: "succeeds",
-                pool: {
-                    base: "10000",
-                    quote: "10000",
-                },
-                isMarkeAllowed: true,
-                depositAssets: "10",
-                redeemShares: "4.992508740634677667",
-                withdrawAssets: "5",
-            },
-        ].forEach(test => {
-            it(test.title, async () => {
-                // pool
-                await initPool(exchange, market, owner, parseShares(test.pool.base), parseAssets(test.pool.base))
-
-                // alice deposits
-                var depositAssets = parseAssets(test.depositAssets)
-                await weth.connect(owner).mint(alice.address, depositAssets)
-
-                // deposit only when pool has liquidity
-                if (test.pool.base !== "0" && test.depositAssets !== "0") {
-                    await longToken.connect(alice).deposit(parseAssets(test.depositAssets), alice.address)
-                }
-
-                if (test.isMarkeAllowed !== void 0) {
-                    await exchange.connect(owner).setIsMarketAllowed(market.address, test.isMarkeAllowed)
-                }
-
-                // alice previews redeem
-                var subject = longToken.connect(alice).previewRedeem(parseShares(test.redeemShares))
-
-                // assert
-                if (test.revertedWith !== void 0) {
-                    await expect(subject).to.revertedWith(test.revertedWith)
-                } else {
-                    expect(await subject).to.eq(parseAssets(test.withdrawAssets))
-                }
-            })
-        })
-    })
-
-    describe("redeem", async () => {
-        beforeEach(async () => {
-            // alice approve longToken of max assets
-            await weth.approveForce(alice.address, longToken.address, ethers.constants.MaxUint256)
-        })
-        ;[
-            {
-                title: "reverts when market is not allowed",
-                pool: {
-                    base: "10000",
-                    quote: "10000",
-                },
-                isMarkeAllowed: false,
-                depositAssets: "10",
-                removeLiquidity: 0,
-                redeemShares: "5",
-                revertedWith: "PLT_R: redeem more than max", // maxRedeem is zero
-            },
-            {
-                title: "reverts when shares is zero",
-                pool: {
-                    base: "10000",
-                    quote: "10000",
-                },
-                isMarkeAllowed: true,
-                depositAssets: "10",
-                removeLiquidity: 0,
-                redeemShares: "0",
-                revertedWith: "PLT_R: redeem is zero",
-            },
-            {
-                title: "reverts when shares is more than max",
-                pool: {
-                    base: "10000",
-                    quote: "10000",
-                },
-                isMarkeAllowed: true,
-                depositAssets: "10",
-                removeLiquidity: 0,
-                redeemShares: "100",
-                revertedWith: "PLT_R: redeem more than max",
-            },
-            {
-                title: "succeeds",
-                pool: {
-                    base: "10000",
-                    quote: "10000",
-                },
-                isMarkeAllowed: true,
-                depositAssets: "10",
-                removeLiquidity: 0,
-                redeemShares: "4.992508740634677667",
-                withdrawAssets: "5",
-            },
-        ].forEach(test => {
-            it(test.title, async () => {
-                // pool
-                await initPool(exchange, market, owner, parseShares(test.pool.base), parseAssets(test.pool.base))
-
-                var depositAssets = parseAssets(test.depositAssets)
-                await weth.connect(owner).mint(alice.address, depositAssets)
-
-                // deposit only when pool has liquidity
-                if (test.pool.base !== "0" && test.depositAssets !== "0") {
-                    await longToken.connect(alice).deposit(parseAssets(test.depositAssets), alice.address)
-                }
-
-                if (test.isMarkeAllowed !== void 0) {
-                    await exchange.connect(owner).setIsMarketAllowed(market.address, test.isMarkeAllowed)
-                }
-
-                // owner remove liquidity
-                if (test.removeLiquidity > 0) {
-                    await exchange.connect(owner).removeLiquidity({
-                        trader: owner.address,
-                        market: market.address,
-                        liquidity: test.removeLiquidity,
-                        minBase: 0,
-                        minQuote: 0,
-                        deadline: ethers.constants.MaxUint256,
-                    })
-                }
-
-                // alice redeem
-                var assetsBefore = await weth.balanceOf(alice.address)
-                var sharesBefore = await longToken.balanceOf(alice.address)
-                var totalAssetsBefore = await longToken.totalAssets()
-                var totalSharesBefore = await longToken.totalSupply()
-
-                var redeemShares = parseShares(test.redeemShares)
-                var previewSubject = longToken.connect(alice).previewRedeem(redeemShares)
-                var redeemSubject = longToken.connect(alice).redeem(redeemShares, alice.address, alice.address)
-
-                // assert
-                if (test.revertedWith !== void 0) {
-                    await expect(redeemSubject).to.revertedWith(test.revertedWith)
-                } else {
-                    var withdrawAssets = parseAssets(test.withdrawAssets)
-
-                    // event
-                    expect(await redeemSubject)
-                        .to.emit(longToken, "Withdraw")
-                        .withArgs(alice.address, alice.address, alice.address, withdrawAssets, redeemShares)
-
-                    // share
-                    expect(await longToken.totalSupply()).to.eq(totalSharesBefore.sub(redeemShares))
-                    expect(await longToken.balanceOf(alice.address)).to.eq(sharesBefore.sub(redeemShares))
-
-                    // asset
-                    expect(await longToken.totalAssets()).to.lt(totalAssetsBefore)
-                    expect(await weth.balanceOf(alice.address)).to.eq(assetsBefore.add(withdrawAssets))
-
-                    // preview <= assets
-                    expect(await previewSubject).to.lte(withdrawAssets)
-                }
-            })
-        })
-    })
-
     describe("previewRedeem and redeem", async () => {
         beforeEach(async () => {
             // alice approve longToken of max assets
@@ -340,93 +143,109 @@ describe("PerpdexLongToken redeem", async () => {
                 },
                 isMarkeAllowed: false,
                 depositAssets: "10",
-                withdrawAssets: "5",
+                redeemShares: "5",
                 ownerAllowance: "0",
                 caller: "alice",
                 owner: "alice",
                 receiver: "alice",
                 revertedWithPreview: "PE_CMA: market not allowed",
-                revertedWith: "PLT_W: withdraw more than max", // maxWithdraw == 0
+                revertedWith: "PLT_R: redeem more than max", // maxWithdraw == 0
             },
             {
-                title: "both reverts when assets is zero",
+                title: "both reverts when shares is zero",
                 pool: {
                     base: "10000",
                     quote: "10000",
                 },
                 isMarkeAllowed: true,
                 depositAssets: "10",
-                withdrawAssets: "0",
+                redeemShares: "0",
                 ownerAllowance: "0",
                 caller: "alice",
                 owner: "alice",
                 receiver: "alice",
                 revertedWithPreview: "PL_SD: output is zero",
-                revertedWith: "PLT_W: withdraw is zero",
+                revertedWith: "PLT_R: redeem is zero",
             },
             {
-                title: "withdraw reverts and preview succeeds when assets is more than max",
+                title: "redeem reverts and preview succeeds when shares is more than max",
                 pool: {
                     base: "10000",
                     quote: "10000",
                 },
                 isMarkeAllowed: true,
                 depositAssets: "10",
-                withdrawAssets: "20",
+                redeemShares: "20",
                 ownerAllowance: "0",
                 caller: "alice",
                 owner: "alice",
                 receiver: "alice",
-                burnedSharesPreview: "20.000020000020000021",
-                revertedWith: "PLT_W: withdraw more than max",
+                withdrawnAssetsPreview: "19.999980039960000079",
+                revertedWith: "PLT_R: redeem more than max",
             },
             {
-                title: "withdraw reverts and preview succeeds when alice withdraws unapproved bob's assets",
+                title: "redeem reverts and preview succeeds when alice redeems unapproved bob's shares",
                 pool: {
                     base: "10000",
                     quote: "10000",
                 },
                 isMarkeAllowed: true,
                 depositAssets: "10",
-                withdrawAssets: "9.9",
+                redeemShares: "9.9",
                 ownerAllowance: "0",
                 caller: "alice",
                 owner: "bob",
                 receiver: "alice",
-                burnedSharesPreview: "9.890010989999990110",
+                withdrawnAssetsPreview: "9.909989199802887336",
                 revertedWith: "ERC20: transfer amount exceeds allowance",
             },
             {
-                title: "succeeds when alice withdraws approved bob's assets to alice",
+                title: "succeeds when alice redeems her shares",
                 pool: {
                     base: "10000",
                     quote: "10000",
                 },
                 isMarkeAllowed: true,
                 depositAssets: "10",
-                withdrawAssets: "9.9",
-                ownerAllowance: "9.891",
+                redeemShares: "9.9",
+                ownerAllowance: "0",
+                caller: "alice",
+                owner: "alice",
+                receiver: "alice",
+                withdrawnAssetsPreview: "9.909989199802887336",
+                withdrawnAssets: "9.909989199802887336",
+            },
+            {
+                title: "succeeds when alice redeems approved bob's shares to alice",
+                pool: {
+                    base: "10000",
+                    quote: "10000",
+                },
+                isMarkeAllowed: true,
+                depositAssets: "10",
+                redeemShares: "9.9",
+                ownerAllowance: "9.9",
                 caller: "alice",
                 owner: "bob",
                 receiver: "alice",
-                burnedSharesPreview: "9.890010989999990110",
-                burnedShares: "9.890010989999990110",
+                withdrawnAssetsPreview: "9.909989199802887336",
+                withdrawnAssets: "9.909989199802887336",
             },
             {
-                title: "succeeds when alice withdraws approved bob's assets to charlie",
+                title: "succeeds when alice redeems approved bob's shares to charlie",
                 pool: {
                     base: "10000",
                     quote: "10000",
                 },
                 isMarkeAllowed: true,
                 depositAssets: "10",
-                withdrawAssets: "9.9",
-                ownerAllowance: "9.891",
+                redeemShares: "9.9",
+                ownerAllowance: "9.9",
                 caller: "alice",
                 owner: "bob",
                 receiver: "charlie",
-                burnedSharesPreview: "9.890010989999990110",
-                burnedShares: "9.890010989999990110",
+                withdrawnAssetsPreview: "9.909989199802887336",
+                withdrawnAssets: "9.909989199802887336",
             },
         ].forEach(test => {
             it(test.title, async () => {
@@ -456,40 +275,38 @@ describe("PerpdexLongToken redeem", async () => {
                     await exchange.connect(owner).setIsMarketAllowed(market.address, test.isMarkeAllowed)
                 }
 
-                // caller previews and withdraws
-                var withdrawAssets = parseAssets(test.withdrawAssets)
-                var previewSubject = longToken.connect(caller).previewWithdraw(withdrawAssets)
-                var withdrawSubject = longToken
-                    .connect(caller)
-                    .withdraw(withdrawAssets, receiver.address, owner_.address)
+                // caller previews and redeems
+                var redeemShares = parseShares(test.redeemShares)
+                var previewSubject = longToken.connect(caller).previewRedeem(redeemShares)
+                var redeemSubject = longToken.connect(caller).redeem(redeemShares, receiver.address, owner_.address)
 
-                // assert withdraw
+                // assert
                 if (test.revertedWith !== void 0) {
                     // preview
                     if (test.revertedWithPreview !== void 0) {
                         await expect(previewSubject).to.revertedWith(test.revertedWithPreview)
                     } else {
-                        expect(await previewSubject).to.equal(parseShares(test.burnedSharesPreview))
+                        expect(await previewSubject).to.equal(parseAssets(test.withdrawnAssetsPreview))
                     }
-                    // withdraw
-                    await expect(withdrawSubject).to.revertedWith(test.revertedWith)
+                    // redeem
+                    await expect(redeemSubject).to.revertedWith(test.revertedWith)
                 } else {
-                    var burnedShares = parseShares(test.burnedShares)
+                    var withdrawnAssets = parseShares(test.withdrawnAssets)
                     // event
-                    expect(await withdrawSubject)
+                    expect(await redeemSubject)
                         .to.emit(longToken, "Withdraw")
-                        .withArgs(caller.address, receiver.address, owner.address, withdrawAssets, burnedShares)
+                        .withArgs(caller.address, receiver.address, owner.address, redeemShares, withdrawnAssets)
 
                     // share
-                    expect(await longToken.totalSupply()).to.eq(totalSharesBefore.sub(burnedShares))
-                    expect(await longToken.balanceOf(owner_.address)).to.eq(ownerSharesBefore.sub(burnedShares))
+                    expect(await longToken.totalSupply()).to.eq(totalSharesBefore.sub(redeemShares))
+                    expect(await longToken.balanceOf(owner_.address)).to.eq(ownerSharesBefore.sub(redeemShares))
 
                     // asset
                     expect(await longToken.totalAssets()).to.lt(totalAssetsBefore)
-                    expect(await weth.balanceOf(receiver.address)).to.eq(receiverAssetsBefore.add(withdrawAssets))
+                    expect(await weth.balanceOf(receiver.address)).to.eq(receiverAssetsBefore.add(withdrawnAssets))
 
                     // preview >= burned
-                    expect(await previewSubject).to.eq(parseShares(test.burnedSharesPreview))
+                    expect(await previewSubject).to.eq(parseShares(test.withdrawnAssetsPreview))
                 }
             })
         })
