@@ -120,17 +120,6 @@ describe("PerpdexLongToken withdraw", async () => {
                 revertedWithPreview: "PE_CMA: market not allowed",
                 revertedWith: "PLT_W: withdraw more than max", // maxWithdraw == 0
             },
-            // {
-            //     title: "TODO: reverts when liquidity is zero",
-            //     pool: {
-            //         base: "100",
-            //         quote: "100",
-            //     },
-            //     depositAssets: "1",
-            //     removeLiquidity: 100e18, // will cause error
-            //     withdrawAssets: "0.5",
-            //     revertedWith: "TL_OP: normal order price limit",
-            // },
             {
                 title: "when assets is zero",
                 pool: {

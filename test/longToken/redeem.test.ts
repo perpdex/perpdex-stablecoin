@@ -247,18 +247,6 @@ describe("PerpdexLongToken redeem", async () => {
                 redeemShares: "100",
                 revertedWith: "PLT_R: redeem more than max",
             },
-            // TODO: overflow occurred when removing liquidity
-            // {
-            //     title: "reverts when pool does not have enough liquidity",
-            //     pool: {
-            //         base: "100",
-            //         quote: "100",
-            //     },
-            //     depositAssets: "1",
-            //     removeLiquidity: 100e18,
-            //     redeemShares: "0.5",
-            //     revertedWith: "TL_OP: normal order price limit",
-            // },
             {
                 title: "succeeds",
                 pool: {
