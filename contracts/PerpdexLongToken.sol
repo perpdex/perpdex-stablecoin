@@ -18,9 +18,8 @@ contract PerpdexLongToken is PerpdexTokenBase {
         _assetSafeTransferFrom(msg.sender, address(this), assets);
         _depositToPerpdex(assets);
 
-        (int256 base, ) = _openPosition(false, true, assets);
+        shares = _openPosition(false, true, assets);
 
-        shares = base.toUint256();
         _mint(receiver, shares);
 
         emit Deposit(msg.sender, receiver, assets, shares);
@@ -35,8 +34,8 @@ contract PerpdexLongToken is PerpdexTokenBase {
         _assetSafeTransferFrom(msg.sender, address(this), assets);
         _depositToPerpdex(assets);
 
-        (, int256 quote) = _openPosition(false, false, shares);
-        require((-quote).toUint256() == assets, "PLT_M: assets not fully used");
+        uint256 oppositeAmount = _openPosition(false, false, shares);
+        require(oppositeAmount == assets, "PLT_M: assets not fully used");
 
         _mint(receiver, shares);
 
@@ -51,8 +50,7 @@ contract PerpdexLongToken is PerpdexTokenBase {
         require(assets != 0, "PLT_W: withdraw is zero");
         require(assets <= maxWithdraw(owner), "PLT_W: withdraw more than max");
 
-        (int256 base, ) = _openPosition(true, false, assets);
-        shares = (-base).toUint256();
+        shares = _openPosition(true, false, assets);
 
         _withdraw(owner, receiver, shares, assets);
     }
@@ -65,30 +63,25 @@ contract PerpdexLongToken is PerpdexTokenBase {
         require(shares != 0, "PLT_R: redeem is zero");
         require(shares <= maxRedeem(owner), "PLT_R: redeem more than max");
 
-        (, int256 quote) = _openPosition(true, true, shares);
-        assets = quote.toUint256();
+        assets = _openPosition(true, true, shares);
 
         _withdraw(owner, receiver, shares, assets);
     }
 
     function previewDeposit(uint256 assets) external view override returns (uint256 shares) {
-        (int256 base, ) = _previewOpenPosition(false, true, assets);
-        shares = base.toUint256();
+        shares = _previewOpenPosition(false, true, assets);
     }
 
     function previewMint(uint256 shares) public view override returns (uint256 assets) {
-        (, int256 quote) = _previewOpenPosition(false, false, shares);
-        assets = (-quote).toUint256();
+        assets = _previewOpenPosition(false, false, shares);
     }
 
     function previewWithdraw(uint256 assets) public view override returns (uint256 shares) {
-        (int256 base, ) = _previewOpenPosition(true, false, assets);
-        shares = (-base).toUint256();
+        shares = _previewOpenPosition(true, false, assets);
     }
 
     function previewRedeem(uint256 shares) external view override returns (uint256 assets) {
-        (, int256 quote) = _previewOpenPosition(true, true, shares);
-        assets = quote.toUint256();
+        assets = _previewOpenPosition(true, true, shares);
     }
 
     function _withdraw(

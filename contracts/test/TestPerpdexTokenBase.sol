@@ -37,17 +37,6 @@ contract TestPerpdexTokenBase is PerpdexTokenBase {
     ) external override returns (uint256 shares) {}
 
     // for unit test
-    function validateOpenPositionResult(
-        bool isBaseToQuote,
-        bool isExactInput,
-        uint256 amount,
-        int256 base,
-        int256 quote
-    ) external pure {
-        return _validateOpenPositionResult(isBaseToQuote, isExactInput, amount, base, quote);
-    }
-
-    // for unit test
     function spendAllowance(
         address owner,
         address spender,

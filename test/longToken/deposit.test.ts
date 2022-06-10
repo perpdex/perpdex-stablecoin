@@ -110,7 +110,7 @@ describe("PerpdexLongToken deposit", async () => {
                 },
                 aliceQuoteAssets: "1000",
                 depositAssets: "100",
-                revertedWith: "PL_SD: output is zero",
+                revertedWith: "PM_PS: too large amount",
             },
             {
                 title: "reverts when assets is zero",
@@ -130,7 +130,7 @@ describe("PerpdexLongToken deposit", async () => {
                 },
                 aliceQuoteAssets: "1000",
                 depositAssets: "100",
-                revertedWith: "PLL_C: price limit",
+                revertedWith: "PM_PS: too large amount",
             },
             {
                 title: "succeeds",
