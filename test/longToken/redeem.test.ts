@@ -149,7 +149,7 @@ describe("PerpdexLongToken redeem", async () => {
                 owner: "alice",
                 receiver: "alice",
                 revertedWithPreview: "PE_CMA: market not allowed",
-                revertedWith: "PLT_R: redeem more than max", // maxWithdraw == 0
+                revertedWith: "PE_CMA: market not allowed", // maxWithdraw == 0
             },
             {
                 title: "both reverts when shares is zero",
@@ -165,7 +165,7 @@ describe("PerpdexLongToken redeem", async () => {
                 owner: "alice",
                 receiver: "alice",
                 revertedWithPreview: "PL_SD: output is zero",
-                revertedWith: "PLT_R: redeem is zero",
+                revertedWith: "PL_SD: output is zero'",
             },
             {
                 title: "redeem reverts and preview succeeds when shares is more than max",
@@ -181,7 +181,7 @@ describe("PerpdexLongToken redeem", async () => {
                 owner: "alice",
                 receiver: "alice",
                 withdrawnAssetsPreview: "19.999980039960000079",
-                revertedWith: "PLT_R: redeem more than max",
+                revertedWith: "ERC20: burn amount exceeds balance",
             },
             {
                 title: "redeem reverts and preview succeeds when alice redeems unapproved bob's shares",
