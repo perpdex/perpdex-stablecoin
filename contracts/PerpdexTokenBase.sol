@@ -85,64 +85,38 @@ abstract contract PerpdexTokenBase is IERC4626, ERC20 {
         bool isBaseToQuote,
         bool isExactInput,
         uint256 amount
-    ) internal view returns (int256 base, int256 quote) {
-        (base, quote) = IPerpdexExchange(exchange).previewOpenPosition(
-            IPerpdexExchange.PreviewOpenPositionParams({
-                trader: address(this),
-                market: market,
-                caller: address(this),
-                isBaseToQuote: isBaseToQuote,
-                isExactInput: isExactInput,
-                amount: amount,
-                oppositeAmountBound: isExactInput ? 0 : type(uint256).max
-            })
-        );
-        _validateOpenPositionResult(isBaseToQuote, isExactInput, amount, base, quote);
+    ) internal view returns (uint256 oppositeAmount) {
+        return
+            IPerpdexExchange(exchange).previewOpenPosition(
+                IPerpdexExchange.PreviewOpenPositionParams({
+                    trader: address(this),
+                    market: market,
+                    caller: address(this),
+                    isBaseToQuote: isBaseToQuote,
+                    isExactInput: isExactInput,
+                    amount: amount,
+                    oppositeAmountBound: isExactInput ? 0 : type(uint256).max
+                })
+            );
     }
 
     function _openPosition(
         bool isBaseToQuote,
         bool isExactInput,
         uint256 amount
-    ) internal returns (int256 base, int256 quote) {
-        (base, quote) = IPerpdexExchange(exchange).openPosition(
-            IPerpdexExchange.OpenPositionParams({
-                trader: address(this),
-                market: market,
-                isBaseToQuote: isBaseToQuote,
-                isExactInput: isExactInput,
-                amount: amount,
-                oppositeAmountBound: isExactInput ? 0 : type(uint256).max,
-                deadline: type(uint256).max
-            })
-        );
-        _validateOpenPositionResult(isBaseToQuote, isExactInput, amount, base, quote);
-    }
-
-    function _validateOpenPositionResult(
-        bool isBaseToQuote,
-        bool isExactInput,
-        uint256 amount,
-        int256 base,
-        int256 quote
-    ) internal pure {
-        if (isExactInput) {
-            if (isBaseToQuote) {
-                require((-base).toUint256() == amount, "PTB_VOPR: EI BTQ base");
-                require(quote > 0, "PTB_VOPR: EI BTQ quote");
-            } else {
-                require(base > 0, "PTB_VOPR: EI QTB base");
-                require((-quote).toUint256() == amount, "PTB_VOPR: EI QTB quote");
-            }
-        } else {
-            if (isBaseToQuote) {
-                require(base < 0, "PTB_VOPR: EO BTQ base");
-                require(quote.toUint256() == amount, "PTB_VOPR: EO BTQ quote");
-            } else {
-                require(base.toUint256() == amount, "PTB_VOPR: EO QTB base");
-                require(quote < 0, "PTB_VOPR: EO QTB quote");
-            }
-        }
+    ) internal returns (uint256 oppositeAmount) {
+        return
+            IPerpdexExchange(exchange).openPosition(
+                IPerpdexExchange.OpenPositionParams({
+                    trader: address(this),
+                    market: market,
+                    isBaseToQuote: isBaseToQuote,
+                    isExactInput: isExactInput,
+                    amount: amount,
+                    oppositeAmountBound: isExactInput ? 0 : type(uint256).max,
+                    deadline: type(uint256).max
+                })
+            );
     }
 
     function _depositToPerpdex(uint256 amount) internal {

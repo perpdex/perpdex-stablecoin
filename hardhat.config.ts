@@ -12,6 +12,11 @@ module.exports = {
             },
         },
     },
+    networks: {
+        hardhat: {
+            allowUnlimitedContractSize: true,
+        },
+    },
     typechain: {
         outDir: "typechain",
         // externalArtifacts: ['externalArtifacts/*.json'], // optional array of glob patterns with external artifacts to process (for example external libs from node_modules)

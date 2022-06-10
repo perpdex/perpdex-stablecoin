@@ -112,7 +112,7 @@ describe("PerpdexLongToken mint", async () => {
                 },
                 aliceQuoteAssets: "1000",
                 mintShares: "100",
-                revertedWith: "SafeMath: subtraction overflow",
+                revertedWith: "PM_PS: too large amount",
             },
             {
                 title: "reverts when assets is zero",
@@ -132,7 +132,7 @@ describe("PerpdexLongToken mint", async () => {
                 },
                 aliceQuoteAssets: "1000",
                 mintShares: "100",
-                revertedWith: "SafeMath: subtraction overflow",
+                revertedWith: "PM_PS: too large amount",
             },
             {
                 title: "succeeds",
