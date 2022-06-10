@@ -7,6 +7,7 @@ import { ERC20 } from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 import { SafeCast } from "@openzeppelin/contracts/utils/SafeCast.sol";
 import { FullMath } from "@uniswap/v3-core/contracts/libraries/FullMath.sol";
+import { PerpdexTokenMath } from "./lib/PerpdexTokenMath.sol";
 import { IPerpdexExchange } from "../deps/perpdex-contract/contracts/interface/IPerpdexExchange.sol";
 import { IPerpdexMarket } from "../deps/perpdex-contract/contracts/interface/IPerpdexMarket.sol";
 import { IERC4626 } from "./interface/IERC4626.sol";
@@ -18,7 +19,6 @@ abstract contract PerpdexTokenBase is IERC4626, ERC20 {
     address public immutable override asset;
     address public immutable market;
     address public immutable exchange;
-    uint256 internal constant Q96 = 0x1000000000000000000000000;
 
     constructor(
         address marketArg,
@@ -35,7 +35,7 @@ abstract contract PerpdexTokenBase is IERC4626, ERC20 {
         totalManagedAssets = value < 0 ? 0 : uint256(value);
     }
 
-    function convertToShares(uint256 assets) external view override returns (uint256 shares) {
+    function convertToShares(uint256 assets) public view override returns (uint256 shares) {
         uint256 supply = totalSupply();
         if (supply == 0) {
             return FullMath.mulDiv(assets, 10**decimals(), 10**IERC20Metadata(asset).decimals());
@@ -46,40 +46,48 @@ abstract contract PerpdexTokenBase is IERC4626, ERC20 {
     function convertToAssets(uint256 shares) public view override returns (uint256 assets) {
         uint256 supply = totalSupply();
         if (supply == 0) {
+            // TODO: PerpMath?
             return FullMath.mulDiv(shares, 10**IERC20Metadata(asset).decimals(), 10**decimals());
         }
         return FullMath.mulDiv(shares, totalAssets(), supply);
     }
 
-    function maxDeposit(address) external view override returns (uint256 maxAssets) {
-        if (_isMarketEmptyPool()) {
-            return 0;
-        }
-        return uint256(type(int256).max);
+    function maxDeposit(address) public view override returns (uint256 maxAssets) {
+        return _maxOpenPosition(false, true);
     }
 
-    function maxMint(address) external view override returns (uint256 maxShares) {
-        if (_isMarketEmptyPool()) {
-            return 0;
-        }
-        return type(uint256).max;
+    function maxMint(address) public view override returns (uint256 maxShares) {
+        return _maxOpenPosition(false, false);
     }
 
     function maxWithdraw(address owner) public view override returns (uint256 maxAssets) {
-        return convertToAssets(balanceOf(owner));
+        return PerpdexTokenMath.minUint256(convertToAssets(balanceOf(owner)), _maxOpenPosition(true, false));
     }
 
     function maxRedeem(address owner) public view override returns (uint256 maxShares) {
-        return balanceOf(owner);
+        return PerpdexTokenMath.minUint256(balanceOf(owner), _maxOpenPosition(true, true));
     }
 
-    function _openPositionDry(
+    function _maxOpenPosition(bool isBaseToQuote, bool isExactInput) internal view returns (uint256 maxAmount) {
+        return
+            IPerpdexExchange(exchange).maxOpenPosition(
+                IPerpdexExchange.MaxOpenPositionParams({
+                    trader: address(this),
+                    market: market,
+                    caller: address(this),
+                    isBaseToQuote: isBaseToQuote,
+                    isExactInput: isExactInput
+                })
+            );
+    }
+
+    function _previewOpenPosition(
         bool isBaseToQuote,
         bool isExactInput,
         uint256 amount
     ) internal view returns (int256 base, int256 quote) {
-        (base, quote) = IPerpdexExchange(exchange).openPositionDry(
-            IPerpdexExchange.OpenPositionDryParams({
+        (base, quote) = IPerpdexExchange(exchange).previewOpenPosition(
+            IPerpdexExchange.PreviewOpenPositionParams({
                 trader: address(this),
                 market: market,
                 caller: address(this),
@@ -137,7 +145,16 @@ abstract contract PerpdexTokenBase is IERC4626, ERC20 {
         }
     }
 
-    function _transferFrom(
+    function _depositToPerpdex(uint256 amount) internal {
+        IERC20(asset).approve(exchange, type(uint256).max);
+        IPerpdexExchange(exchange).deposit(amount);
+    }
+
+    function _assetSafeTransfer(address to, uint256 amount) internal {
+        SafeERC20.safeTransfer(IERC20(asset), to, amount);
+    }
+
+    function _assetSafeTransferFrom(
         address from,
         address to,
         uint256 amount
@@ -167,9 +184,17 @@ abstract contract PerpdexTokenBase is IERC4626, ERC20 {
             );
     }
 
-    function _isMarketEmptyPool() internal view returns (bool) {
-        // TODO:
-        // return IPerpdexMarket(market).poolInfo().totalLiquidity == 0;
-        return false;
+    // https://github.com/OpenZeppelin/openzeppelin-contracts/commit/c5a6cae8981d8005e22243b681745af92d44d1fc
+    function _spendAllowance(
+        address owner,
+        address spender,
+        uint256 amount
+    ) internal virtual {
+        uint256 currentAllowance = allowance(owner, spender);
+        if (currentAllowance != type(uint256).max) {
+            // solhint-disable-next-line reason-string
+            require(amount <= currentAllowance, "ERC20: transfer amount exceeds allowance");
+            _approve(owner, spender, currentAllowance - amount);
+        }
     }
 }

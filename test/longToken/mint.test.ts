@@ -47,141 +47,184 @@ describe("PerpdexLongToken mint", async () => {
 
     describe("maxMint", async () => {
         ;[
-            // {
-            //   title: "TODO: returns 0 when pool liquidity is zero",
-            //   pool: {
-            //     base: "0",
-            //     quote: "0",
-            //   },
-            //   expected: 0,
-            // },
             {
-                title: "returns max uint",
+                title: "returns 0 when market is not allowed",
+                pool: {
+                    base: "0",
+                    quote: "0",
+                },
+                isMarkeAllowed: false,
+                expected: "0",
+            },
+            {
+                title: "returns 0 when pool liquidity is zero",
+                pool: {
+                    base: "0",
+                    quote: "0",
+                },
+                expected: "0",
+            },
+            {
+                title: "succeeds",
                 pool: {
                     base: "10",
                     quote: "10",
                 },
-                expected: ethers.constants.MaxUint256,
+                expected: "0.240999270514668206",
             },
         ].forEach(test => {
             it(test.title, async () => {
                 // init pool
                 await initPool(exchange, market, owner, parseShares(test.pool.base), parseAssets(test.pool.base))
 
-                expect(await longToken.maxMint(alice.address)).to.eq(test.expected)
+                if (test.isMarkeAllowed !== void 0) {
+                    await exchange.connect(owner).setIsMarketAllowed(market.address, test.isMarkeAllowed)
+                }
+
+                expect(await longToken.maxMint(alice.address)).to.eq(parseShares(test.expected))
             })
         })
     })
 
     describe("previewMint", async () => {
         beforeEach(async () => {
-            // approve max
+            // alice approve longToken of max assets
             await weth.approveForce(alice.address, longToken.address, ethers.constants.MaxUint256)
             await weth.approveForce(longToken.address, exchange.address, ethers.constants.MaxUint256)
         })
         ;[
             {
-                title: "returns 0 when shares is zero",
+                title: "reverts when market is not allowed",
                 pool: {
-                    base: "1",
-                    quote: "1",
+                    base: "10",
+                    quote: "10",
                 },
-                aliceAssetsBefore: "100",
+                isMarkeAllowed: false,
+                aliceQuoteAssets: "1000",
+                mintShares: "100",
+                revertedWith: "PE_CMA: market not allowed",
+            },
+            {
+                title: "reverts when liquidity is zero",
+                pool: {
+                    base: "0",
+                    quote: "0",
+                },
+                aliceQuoteAssets: "1000",
+                mintShares: "100",
+                revertedWith: "SafeMath: subtraction overflow",
+            },
+            {
+                title: "reverts when assets is zero",
+                pool: {
+                    base: "10",
+                    quote: "10",
+                },
+                aliceQuoteAssets: "1000",
                 mintShares: "0",
-                assetsAmount: "0",
+                revertedWith: "PL_SD: output is zero",
             },
-            // TODO:
-            // {
-            //   title: "returns patial assets when pool liquidity is not enought",
-            //   pool: {
-            //     base: "1",
-            //     quote: "1",
-            //   },
-            //   aliceAssetsBefore: "100",
-            //   mintShares: "10",
-            //   assetsAmount: "123",
-            // },
             {
-                title: "returns ideal assets even if alice's assets is not enough",
+                title: "reverts when assets is too large",
+                pool: {
+                    base: "10",
+                    quote: "10",
+                },
+                aliceQuoteAssets: "1000",
+                mintShares: "100",
+                revertedWith: "SafeMath: subtraction overflow",
+            },
+            {
+                title: "succeeds",
                 pool: {
                     base: "10000",
                     quote: "10000",
                 },
-                aliceAssetsBefore: "5",
+                aliceQuoteAssets: "500",
                 mintShares: "10",
-                assetsAmount: "10.010010010010010011",
-            },
-            {
-                title: "returns ideal assets when alice's assets is enough",
-                pool: {
-                    base: "10000",
-                    quote: "10000",
-                },
-                aliceAssetsBefore: "100",
-                mintShares: "10",
-                assetsAmount: "10.010010010010010011",
+                depositedAssets: "10.010010010010010011",
             },
         ].forEach(test => {
             it(test.title, async () => {
                 await initPool(exchange, market, owner, parseShares(test.pool.base), parseAssets(test.pool.base))
 
-                // alice balance
-                await weth.connect(owner).mint(alice.address, parseAssets(test.aliceAssetsBefore))
+                if (test.isMarkeAllowed !== void 0) {
+                    await exchange.connect(owner).setIsMarketAllowed(market.address, test.isMarkeAllowed)
+                }
 
-                // alice deposit preview
-                var mintShares = parseAssets(test.mintShares)
-                var assetsAmount = parseShares(test.assetsAmount)
-                expect(await longToken.connect(alice).previewMint(mintShares)).to.eq(assetsAmount)
+                // alice balance
+                await weth.connect(owner).mint(alice.address, parseAssets(test.aliceQuoteAssets))
+
+                // alice preview mint
+                var mintShares = parseShares(test.mintShares)
+                var subject = longToken.connect(alice).previewMint(mintShares)
+
+                // assert
+                if (test.revertedWith !== void 0) {
+                    await expect(subject).to.revertedWith(test.revertedWith)
+                } else {
+                    expect(await subject).to.eq(parseShares(test.depositedAssets))
+                }
             })
         })
     })
 
     describe("mint", async () => {
         beforeEach(async () => {
-            // approve max
+            // alice approve longToken of max assets
             await weth.approveForce(alice.address, longToken.address, ethers.constants.MaxUint256)
-            await weth.approveForce(longToken.address, exchange.address, ethers.constants.MaxUint256)
         })
         ;[
             {
-                title: "reverts when shares is zero",
+                title: "reverts when market is not allowed",
                 pool: {
-                    base: "1",
-                    quote: "1",
+                    base: "10",
+                    quote: "10",
                 },
-                aliceAssetsBefore: "100",
+                isMarkeAllowed: false,
+                aliceQuoteAssets: "1000",
+                mintShares: "100",
+                revertedWith: "PLT_M: mint more than max", // maxMint == 0
+            },
+            {
+                title: "reverts when liquidity is zero",
+                pool: {
+                    base: "0",
+                    quote: "0",
+                },
+                aliceQuoteAssets: "1000",
+                mintShares: "100",
+                revertedWith: "PLT_M: mint more than max", // maxMint == 0
+            },
+            {
+                title: "reverts when assets is zero",
+                pool: {
+                    base: "10",
+                    quote: "10",
+                },
+                aliceQuoteAssets: "1000",
                 mintShares: "0",
-                revertedWith: "PLT_M: shares is zero",
+                revertedWith: "PLT_M: mint is zero",
             },
             {
-                title: "reverts when pool does not have enough liquidity",
+                title: "reverts when assets is too large",
                 pool: {
-                    base: "1",
-                    quote: "1",
+                    base: "10",
+                    quote: "10",
                 },
-                aliceAssetsBefore: "100",
-                mintShares: "10",
-                revertedWith: "SafeMath: subtraction overflow",
+                aliceQuoteAssets: "1000",
+                mintShares: "100",
+                revertedWith: "PLT_M: mint more than max",
             },
             {
-                title: "reverts when alice does not have enough WETH",
-                pool: {
-                    base: "10000",
-                    quote: "10000",
-                },
-                aliceAssetsBefore: "5",
-                mintShares: "10",
-                revertedWith: "ERC20: transfer amount exceeds balance",
-            },
-            {
-                title: "successes when alice has enough WETH",
+                title: "succeeds",
                 pool: {
                     base: "10000",
                     quote: "10000",
                 },
-                aliceAssetsBefore: "50",
+                aliceQuoteAssets: "50",
                 mintShares: "20",
-                assetsAmount: "20.040080160320641283",
+                depositedAssets: "20.040080160320641283",
                 totalAssetsAfter: "20.080240641603848980",
                 aliceAssetsAfter: "29.959919839679358717",
             },
@@ -191,26 +234,25 @@ describe("PerpdexLongToken mint", async () => {
                 await initPool(exchange, market, owner, parseShares(test.pool.base), parseAssets(test.pool.base))
 
                 // alice balance
-                await weth.connect(owner).mint(alice.address, parseAssets(test.aliceAssetsBefore))
+                await weth.connect(owner).mint(alice.address, parseAssets(test.aliceQuoteAssets))
 
                 // alice mint preview
                 var mintShares = parseShares(test.mintShares)
-                // var previewRes = await longToken
-                //     .connect(alice)
-                //     .previewMint(mintShares);
+                var previewSubject = longToken.connect(alice).previewMint(mintShares)
 
                 // alice mints
-                var mintRes = expect(longToken.connect(alice).mint(mintShares, alice.address))
+                var mintSubject = longToken.connect(alice).mint(mintShares, alice.address)
 
                 // assert
                 if (test.revertedWith !== void 0) {
-                    await mintRes.to.revertedWith(test.revertedWith)
+                    await expect(previewSubject).to.reverted
+                    await expect(mintSubject).to.revertedWith(test.revertedWith)
                 } else {
-                    var assetsAmount = parseAssets(test.assetsAmount)
+                    var depositedAssets = parseAssets(test.depositedAssets)
                     // event
-                    await mintRes.to
-                        .emit(longToken, "Deposit")
-                        .withArgs(alice.address, alice.address, assetsAmount, mintShares)
+                    expect(await mintSubject)
+                        .to.emit(longToken, "Deposit")
+                        .withArgs(alice.address, alice.address, depositedAssets, mintShares)
 
                     // share
                     expect(await longToken.totalSupply()).to.eq(mintShares)
@@ -221,7 +263,7 @@ describe("PerpdexLongToken mint", async () => {
                     expect(await weth.balanceOf(alice.address)).to.eq(parseAssets(test.aliceAssetsAfter))
 
                     // preview >= assets
-                    // expect(previewRes).to.gte(assetsAmount);
+                    expect(await previewSubject).to.gte(depositedAssets)
                 }
             })
         })
