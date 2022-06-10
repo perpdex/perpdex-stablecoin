@@ -119,7 +119,6 @@ abstract contract PerpdexTokenBase is IERC4626, ERC20 {
         _validateOpenPositionResult(isBaseToQuote, isExactInput, amount, base, quote);
     }
 
-    // TODO: do we need this?
     function _validateOpenPositionResult(
         bool isBaseToQuote,
         bool isExactInput,
@@ -183,12 +182,6 @@ abstract contract PerpdexTokenBase is IERC4626, ERC20 {
                     IERC20Metadata(IPerpdexExchange(IPerpdexMarket(marketArg).exchange()).settlementToken()).symbol()
                 )
             );
-    }
-
-    function _isMarketEmptyPool() internal view returns (bool) {
-        // TODO:
-        // return IPerpdexMarket(market).poolInfo().totalLiquidity == 0;
-        return false;
     }
 
     // https://github.com/OpenZeppelin/openzeppelin-contracts/commit/c5a6cae8981d8005e22243b681745af92d44d1fc

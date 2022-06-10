@@ -6,8 +6,6 @@ import { SafeCast } from "@openzeppelin/contracts/utils/SafeCast.sol";
 import { IPerpdexExchange } from "../deps/perpdex-contract/contracts/interface/IPerpdexExchange.sol";
 import { PerpdexTokenBase } from "./PerpdexTokenBase.sol";
 
-import "hardhat/console.sol";
-
 contract PerpdexLongToken is PerpdexTokenBase {
     using SafeCast for int256;
 
