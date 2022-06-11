@@ -45,23 +45,75 @@ abstract contract PerpdexTokenBase is IERC4626, ERC20 {
     function convertToAssets(uint256 shares) public view override returns (uint256 assets) {
         uint256 supply = totalSupply();
         if (supply == 0) {
-            // TODO: PerpMath?
             return FullMath.mulDiv(shares, 10**IERC20Metadata(asset).decimals(), 10**decimals());
         }
         return FullMath.mulDiv(shares, totalAssets(), supply);
     }
 
-    function _maxTrade(bool isBaseToQuote, bool isExactInput) internal view returns (uint256 maxAmount) {
+    function _convertToPerpdexDecimals(uint256 amount) internal view returns (uint256 assets) {
         return
-            IPerpdexExchange(exchange).maxTrade(
-                IPerpdexExchange.MaxTradeParams({
-                    trader: address(this),
-                    market: market,
-                    caller: address(this),
-                    isBaseToQuote: isBaseToQuote,
-                    isExactInput: isExactInput
-                })
+            FullMath.mulDiv(
+                amount,
+                10**IPerpdexExchange(exchange).quoteDecimals(),
+                10**IERC20Metadata(asset).decimals()
             );
+    }
+
+    function _convertToAssetDecimals(uint256 amount) internal view returns (uint256 assets) {
+        return
+            FullMath.mulDiv(
+                amount,
+                10**IERC20Metadata(asset).decimals(),
+                10**IPerpdexExchange(exchange).quoteDecimals()
+            );
+    }
+
+    function _beforeTrade(
+        bool isBaseToQuote,
+        bool isExactInput,
+        uint256 amount
+    ) private view returns (uint256) {
+        if (isBaseToQuote) {
+            if (!isExactInput) {
+                return _convertToPerpdexDecimals(amount);
+            }
+        } else {
+            if (isExactInput) {
+                return _convertToPerpdexDecimals(amount);
+            }
+        }
+        return amount;
+    }
+
+    function _afterTrade(
+        bool isBaseToQuote,
+        bool isExactInput,
+        uint256 amount
+    ) private view returns (uint256) {
+        if (isBaseToQuote) {
+            if (isExactInput) {
+                return _convertToAssetDecimals(amount);
+            }
+        } else {
+            if (!isExactInput) {
+                return _convertToAssetDecimals(amount);
+            }
+        }
+        return amount;
+    }
+
+    function _maxTrade(bool isBaseToQuote, bool isExactInput) internal view returns (uint256 maxAmount) {
+        maxAmount = IPerpdexExchange(exchange).maxTrade(
+            IPerpdexExchange.MaxTradeParams({
+                trader: address(this),
+                market: market,
+                caller: address(this),
+                isBaseToQuote: isBaseToQuote,
+                isExactInput: isExactInput
+            })
+        );
+
+        maxAmount = _afterTrade(isBaseToQuote, isExactInput, maxAmount);
     }
 
     function _tryPreviewTrade(
@@ -69,6 +121,7 @@ abstract contract PerpdexTokenBase is IERC4626, ERC20 {
         bool isExactInput,
         uint256 amount
     ) internal view returns (bool success, uint256 oppositeAmount) {
+        amount = _beforeTrade(isBaseToQuote, isExactInput, amount);
         try
             IPerpdexExchange(exchange).previewTrade(
                 IPerpdexExchange.PreviewTradeParams({
@@ -83,7 +136,7 @@ abstract contract PerpdexTokenBase is IERC4626, ERC20 {
             )
         returns (uint256 v) {
             success = true;
-            oppositeAmount = v;
+            oppositeAmount = _afterTrade(isBaseToQuote, isExactInput, v);
         } catch {}
     }
 
@@ -92,18 +145,19 @@ abstract contract PerpdexTokenBase is IERC4626, ERC20 {
         bool isExactInput,
         uint256 amount
     ) internal view returns (uint256 oppositeAmount) {
-        return
-            IPerpdexExchange(exchange).previewTrade(
-                IPerpdexExchange.PreviewTradeParams({
-                    trader: address(this),
-                    market: market,
-                    caller: address(this),
-                    isBaseToQuote: isBaseToQuote,
-                    isExactInput: isExactInput,
-                    amount: amount,
-                    oppositeAmountBound: isExactInput ? 0 : type(uint256).max
-                })
-            );
+        amount = _beforeTrade(isBaseToQuote, isExactInput, amount);
+        oppositeAmount = IPerpdexExchange(exchange).previewTrade(
+            IPerpdexExchange.PreviewTradeParams({
+                trader: address(this),
+                market: market,
+                caller: address(this),
+                isBaseToQuote: isBaseToQuote,
+                isExactInput: isExactInput,
+                amount: amount,
+                oppositeAmountBound: isExactInput ? 0 : type(uint256).max
+            })
+        );
+        oppositeAmount = _afterTrade(isBaseToQuote, isExactInput, oppositeAmount);
     }
 
     function _trade(
@@ -111,23 +165,24 @@ abstract contract PerpdexTokenBase is IERC4626, ERC20 {
         bool isExactInput,
         uint256 amount
     ) internal returns (uint256 oppositeAmount) {
-        return
-            IPerpdexExchange(exchange).trade(
-                IPerpdexExchange.TradeParams({
-                    trader: address(this),
-                    market: market,
-                    isBaseToQuote: isBaseToQuote,
-                    isExactInput: isExactInput,
-                    amount: amount,
-                    oppositeAmountBound: isExactInput ? 0 : type(uint256).max,
-                    deadline: type(uint256).max
-                })
-            );
+        amount = _beforeTrade(isBaseToQuote, isExactInput, amount);
+        oppositeAmount = IPerpdexExchange(exchange).trade(
+            IPerpdexExchange.TradeParams({
+                trader: address(this),
+                market: market,
+                isBaseToQuote: isBaseToQuote,
+                isExactInput: isExactInput,
+                amount: amount,
+                oppositeAmountBound: isExactInput ? 0 : type(uint256).max,
+                deadline: type(uint256).max
+            })
+        );
+        oppositeAmount = _afterTrade(isBaseToQuote, isExactInput, oppositeAmount);
     }
 
     function _depositToPerpdex(uint256 amount) internal {
         IERC20(asset).approve(exchange, type(uint256).max);
-        IPerpdexExchange(exchange).deposit(amount);
+        IPerpdexExchange(exchange).deposit(_convertToPerpdexDecimals(amount));
     }
 
     function _assetSafeTransfer(address to, uint256 amount) internal {

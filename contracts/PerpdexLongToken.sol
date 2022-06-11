@@ -107,7 +107,7 @@ contract PerpdexLongToken is PerpdexTokenBase {
         _burn(owner, shares);
 
         // withdraw
-        IPerpdexExchange(exchange).withdraw(assets);
+        IPerpdexExchange(exchange).withdraw(_convertToPerpdexDecimals(assets));
         _assetSafeTransfer(receiver, assets);
 
         emit Withdraw(msg.sender, receiver, owner, assets, shares);
