@@ -53,25 +53,25 @@ abstract contract PerpdexTokenBase is IERC4626, ERC20 {
     }
 
     function maxDeposit(address) public view override returns (uint256 maxAssets) {
-        return _maxOpenPosition(false, true);
+        return _maxTrade(false, true);
     }
 
     function maxMint(address) public view override returns (uint256 maxShares) {
-        return _maxOpenPosition(false, false);
+        return _maxTrade(false, false);
     }
 
     function maxWithdraw(address owner) public view override returns (uint256 maxAssets) {
-        return PerpdexTokenMath.minUint256(convertToAssets(balanceOf(owner)), _maxOpenPosition(true, false));
+        return PerpdexTokenMath.minUint256(convertToAssets(balanceOf(owner)), _maxTrade(true, false));
     }
 
     function maxRedeem(address owner) public view override returns (uint256 maxShares) {
-        return PerpdexTokenMath.minUint256(balanceOf(owner), _maxOpenPosition(true, true));
+        return PerpdexTokenMath.minUint256(balanceOf(owner), _maxTrade(true, true));
     }
 
-    function _maxOpenPosition(bool isBaseToQuote, bool isExactInput) internal view returns (uint256 maxAmount) {
+    function _maxTrade(bool isBaseToQuote, bool isExactInput) internal view returns (uint256 maxAmount) {
         return
-            IPerpdexExchange(exchange).maxOpenPosition(
-                IPerpdexExchange.MaxOpenPositionParams({
+            IPerpdexExchange(exchange).maxTrade(
+                IPerpdexExchange.MaxTradeParams({
                     trader: address(this),
                     market: market,
                     caller: address(this),
@@ -81,14 +81,14 @@ abstract contract PerpdexTokenBase is IERC4626, ERC20 {
             );
     }
 
-    function _previewOpenPosition(
+    function _previewTrade(
         bool isBaseToQuote,
         bool isExactInput,
         uint256 amount
     ) internal view returns (uint256 oppositeAmount) {
         return
-            IPerpdexExchange(exchange).previewOpenPosition(
-                IPerpdexExchange.PreviewOpenPositionParams({
+            IPerpdexExchange(exchange).previewTrade(
+                IPerpdexExchange.PreviewTradeParams({
                     trader: address(this),
                     market: market,
                     caller: address(this),
@@ -100,14 +100,14 @@ abstract contract PerpdexTokenBase is IERC4626, ERC20 {
             );
     }
 
-    function _openPosition(
+    function _trade(
         bool isBaseToQuote,
         bool isExactInput,
         uint256 amount
     ) internal returns (uint256 oppositeAmount) {
         return
-            IPerpdexExchange(exchange).openPosition(
-                IPerpdexExchange.OpenPositionParams({
+            IPerpdexExchange(exchange).trade(
+                IPerpdexExchange.TradeParams({
                     trader: address(this),
                     market: market,
                     isBaseToQuote: isBaseToQuote,
