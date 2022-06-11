@@ -7,7 +7,6 @@ import { ERC20 } from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 import { SafeCast } from "@openzeppelin/contracts/utils/SafeCast.sol";
 import { FullMath } from "@uniswap/v3-core/contracts/libraries/FullMath.sol";
-import { PerpdexTokenMath } from "./lib/PerpdexTokenMath.sol";
 import { IPerpdexExchange } from "../deps/perpdex-contract/contracts/interface/IPerpdexExchange.sol";
 import { IPerpdexMarket } from "../deps/perpdex-contract/contracts/interface/IPerpdexMarket.sol";
 import { IERC4626 } from "./interface/IERC4626.sol";
@@ -52,22 +51,6 @@ abstract contract PerpdexTokenBase is IERC4626, ERC20 {
         return FullMath.mulDiv(shares, totalAssets(), supply);
     }
 
-    function maxDeposit(address) public view override returns (uint256 maxAssets) {
-        return _maxTrade(false, true);
-    }
-
-    function maxMint(address) public view override returns (uint256 maxShares) {
-        return _maxTrade(false, false);
-    }
-
-    function maxWithdraw(address owner) public view override returns (uint256 maxAssets) {
-        return PerpdexTokenMath.minUint256(convertToAssets(balanceOf(owner)), _maxTrade(true, false));
-    }
-
-    function maxRedeem(address owner) public view override returns (uint256 maxShares) {
-        return PerpdexTokenMath.minUint256(balanceOf(owner), _maxTrade(true, true));
-    }
-
     function _maxTrade(bool isBaseToQuote, bool isExactInput) internal view returns (uint256 maxAmount) {
         return
             IPerpdexExchange(exchange).maxTrade(
@@ -79,6 +62,29 @@ abstract contract PerpdexTokenBase is IERC4626, ERC20 {
                     isExactInput: isExactInput
                 })
             );
+    }
+
+    function _tryPreviewTrade(
+        bool isBaseToQuote,
+        bool isExactInput,
+        uint256 amount
+    ) internal view returns (bool success, uint256 oppositeAmount) {
+        try
+            IPerpdexExchange(exchange).previewTrade(
+                IPerpdexExchange.PreviewTradeParams({
+                    trader: address(this),
+                    market: market,
+                    caller: address(this),
+                    isBaseToQuote: isBaseToQuote,
+                    isExactInput: isExactInput,
+                    amount: amount,
+                    oppositeAmountBound: isExactInput ? 0 : type(uint256).max
+                })
+            )
+        returns (uint256 v) {
+            success = true;
+            oppositeAmount = v;
+        } catch {}
     }
 
     function _previewTrade(

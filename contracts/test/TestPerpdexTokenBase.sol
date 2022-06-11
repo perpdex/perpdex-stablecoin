@@ -20,6 +20,14 @@ contract TestPerpdexTokenBase is PerpdexTokenBase {
 
     function previewRedeem(uint256 shares) external view override returns (uint256 assets) {}
 
+    function maxDeposit(address receiver) external view override returns (uint256 maxAssets) {}
+
+    function maxMint(address receiver) external view override returns (uint256 maxShares) {}
+
+    function maxWithdraw(address owner) external view override returns (uint256 maxAssets) {}
+
+    function maxRedeem(address owner) external view override returns (uint256 maxShares) {}
+
     function mint(uint256 shares, address receiver) external override returns (uint256 assets) {}
 
     function deposit(uint256 assets, address receiver) external override returns (uint256 shares) {}

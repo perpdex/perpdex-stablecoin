@@ -2,6 +2,7 @@
 pragma solidity 0.7.6;
 pragma abicoder v2;
 
+import { Math } from "@openzeppelin/contracts/math/Math.sol";
 import { SafeCast } from "@openzeppelin/contracts/utils/SafeCast.sol";
 import { IPerpdexExchange } from "../deps/perpdex-contract/contracts/interface/IPerpdexExchange.sol";
 import { PerpdexTokenBase } from "./PerpdexTokenBase.sol";
@@ -71,6 +72,26 @@ contract PerpdexLongToken is PerpdexTokenBase {
 
     function previewRedeem(uint256 shares) external view override returns (uint256 assets) {
         assets = _previewTrade(true, true, shares);
+    }
+
+    function maxDeposit(address) public view override returns (uint256 maxAssets) {
+        return _maxTrade(false, true);
+    }
+
+    function maxMint(address) public view override returns (uint256 maxShares) {
+        return _maxTrade(false, false);
+    }
+
+    function maxWithdraw(address owner) public view override returns (uint256 maxAssets) {
+        maxAssets = _maxTrade(true, false);
+        (bool success, uint256 previewAssets) = _tryPreviewTrade(true, false, balanceOf(owner));
+        if (success) {
+            maxAssets = Math.min(maxAssets, previewAssets);
+        }
+    }
+
+    function maxRedeem(address owner) public view override returns (uint256 maxShares) {
+        return Math.min(balanceOf(owner), _maxTrade(true, true));
     }
 
     function _withdraw(
