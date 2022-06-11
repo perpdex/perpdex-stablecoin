@@ -110,7 +110,19 @@ describe("PerpdexLongToken withdraw", async () => {
 
                 await exchange.connect(owner).setIsMarketAllowed(market.address, test.isMarketAllowed)
 
-                expect(await longToken.maxWithdraw(alice.address)).to.eq(parseAssets(test.expected))
+                const maxWithdraw = await longToken.maxWithdraw(alice.address)
+                expect(maxWithdraw).to.eq(parseAssets(test.expected))
+
+                // check consistency
+                const previewSubject = longToken.connect(alice).previewWithdraw(maxWithdraw)
+                const withdrawSubject = longToken.connect(alice).withdraw(maxWithdraw, alice.address, alice.address)
+                if (maxWithdraw.gt(0)) {
+                    await expect(previewSubject).not.to.reverted
+                    await expect(withdrawSubject).not.to.reverted
+                } else {
+                    await expect(previewSubject).to.reverted
+                    await expect(withdrawSubject).to.reverted
+                }
             })
         })
     })
