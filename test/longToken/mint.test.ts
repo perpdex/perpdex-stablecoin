@@ -53,7 +53,7 @@ describe("PerpdexLongToken mint", async () => {
                     base: "0",
                     quote: "0",
                 },
-                isMarkeAllowed: false,
+                isMarketAllowed: false,
                 expected: "0",
             },
             {
@@ -77,8 +77,8 @@ describe("PerpdexLongToken mint", async () => {
                 // init pool
                 await initPool(exchange, market, owner, parseShares(test.pool.base), parseAssets(test.pool.quote))
 
-                if (test.isMarkeAllowed !== void 0) {
-                    await exchange.connect(owner).setIsMarketAllowed(market.address, test.isMarkeAllowed)
+                if (test.isMarketAllowed !== void 0) {
+                    await exchange.connect(owner).setIsMarketAllowed(market.address, test.isMarketAllowed)
                 }
 
                 expect(await longToken.maxMint(alice.address)).to.eq(parseShares(test.expected))
@@ -99,7 +99,7 @@ describe("PerpdexLongToken mint", async () => {
                     base: "10",
                     quote: "10",
                 },
-                isMarkeAllowed: false,
+                isMarketAllowed: false,
                 aliceQuoteAssets: "1000",
                 mintShares: "100",
                 revertedWith: "PE_CMA: market not allowed",
@@ -148,8 +148,8 @@ describe("PerpdexLongToken mint", async () => {
             it(test.title, async () => {
                 await initPool(exchange, market, owner, parseShares(test.pool.base), parseAssets(test.pool.quote))
 
-                if (test.isMarkeAllowed !== void 0) {
-                    await exchange.connect(owner).setIsMarketAllowed(market.address, test.isMarkeAllowed)
+                if (test.isMarketAllowed !== void 0) {
+                    await exchange.connect(owner).setIsMarketAllowed(market.address, test.isMarketAllowed)
                 }
 
                 // alice balance
@@ -181,7 +181,7 @@ describe("PerpdexLongToken mint", async () => {
                     base: "10",
                     quote: "10",
                 },
-                isMarkeAllowed: false,
+                isMarketAllowed: false,
                 aliceQuoteAssets: "1000",
                 mintShares: "100",
                 revertedWith: "PM_PS: too large amount", // maxMint == 0

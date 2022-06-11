@@ -72,7 +72,7 @@ describe("PerpdexLongToken redeem", async () => {
                     base: "10000",
                     quote: "10000",
                 },
-                isMarkeAllowed: false,
+                isMarketAllowed: false,
                 depositAssets: "10",
                 expected: "0",
             },
@@ -82,7 +82,7 @@ describe("PerpdexLongToken redeem", async () => {
                     base: "0",
                     quote: "0",
                 },
-                isMarkeAllowed: true,
+                isMarketAllowed: true,
                 depositAssets: "10",
                 expected: "0",
             },
@@ -92,7 +92,7 @@ describe("PerpdexLongToken redeem", async () => {
                     base: "10000",
                     quote: "10000",
                 },
-                isMarkeAllowed: true,
+                isMarketAllowed: true,
                 depositAssets: "10",
                 expected: "9.990009990009990009",
             },
@@ -102,7 +102,7 @@ describe("PerpdexLongToken redeem", async () => {
                     base: "10000",
                     quote: "10000",
                 },
-                isMarkeAllowed: true,
+                isMarketAllowed: true,
                 depositAssets: "0",
                 expected: "0",
             },
@@ -111,13 +111,13 @@ describe("PerpdexLongToken redeem", async () => {
                 // init pool
                 await initPool(exchange, market, owner, parseShares(test.pool.base), parseAssets(test.pool.quote))
 
-                await exchange.connect(owner).setIsMarketAllowed(market.address, test.isMarkeAllowed)
+                await exchange.connect(owner).setIsMarketAllowed(market.address, test.isMarketAllowed)
 
                 // alice deposits
                 await weth.connect(owner).mint(alice.address, parseAssets(test.depositAssets))
 
                 // deposit only when market is allowed and pool has liquidity
-                if (test.isMarkeAllowed && test.pool.base !== "0" && test.depositAssets !== "0") {
+                if (test.isMarketAllowed && test.pool.base !== "0" && test.depositAssets !== "0") {
                     await longToken.connect(alice).deposit(parseAssets(test.depositAssets), alice.address)
                 }
 
@@ -141,7 +141,7 @@ describe("PerpdexLongToken redeem", async () => {
                     base: "10000",
                     quote: "10000",
                 },
-                isMarkeAllowed: false,
+                isMarketAllowed: false,
                 depositAssets: "10",
                 redeemShares: "5",
                 ownerAllowance: "0",
@@ -157,7 +157,7 @@ describe("PerpdexLongToken redeem", async () => {
                     base: "10000",
                     quote: "10000",
                 },
-                isMarkeAllowed: true,
+                isMarketAllowed: true,
                 depositAssets: "10",
                 redeemShares: "0",
                 ownerAllowance: "0",
@@ -173,7 +173,7 @@ describe("PerpdexLongToken redeem", async () => {
                     base: "10000",
                     quote: "10000",
                 },
-                isMarkeAllowed: true,
+                isMarketAllowed: true,
                 depositAssets: "10",
                 redeemShares: "20",
                 ownerAllowance: "0",
@@ -189,7 +189,7 @@ describe("PerpdexLongToken redeem", async () => {
                     base: "10000",
                     quote: "10000",
                 },
-                isMarkeAllowed: true,
+                isMarketAllowed: true,
                 depositAssets: "10",
                 redeemShares: "9.9",
                 ownerAllowance: "0",
@@ -205,7 +205,7 @@ describe("PerpdexLongToken redeem", async () => {
                     base: "10000",
                     quote: "10000",
                 },
-                isMarkeAllowed: true,
+                isMarketAllowed: true,
                 depositAssets: "10",
                 redeemShares: "9.9",
                 ownerAllowance: "0",
@@ -221,7 +221,7 @@ describe("PerpdexLongToken redeem", async () => {
                     base: "10000",
                     quote: "10000",
                 },
-                isMarkeAllowed: true,
+                isMarketAllowed: true,
                 depositAssets: "10",
                 redeemShares: "9.9",
                 ownerAllowance: "9.9",
@@ -237,7 +237,7 @@ describe("PerpdexLongToken redeem", async () => {
                     base: "10000",
                     quote: "10000",
                 },
-                isMarkeAllowed: true,
+                isMarketAllowed: true,
                 depositAssets: "10",
                 redeemShares: "9.9",
                 ownerAllowance: "9.9",
@@ -271,8 +271,8 @@ describe("PerpdexLongToken redeem", async () => {
                 var totalSharesBefore = await longToken.totalSupply()
 
                 // change market allowance
-                if (test.isMarkeAllowed !== void 0) {
-                    await exchange.connect(owner).setIsMarketAllowed(market.address, test.isMarkeAllowed)
+                if (test.isMarketAllowed !== void 0) {
+                    await exchange.connect(owner).setIsMarketAllowed(market.address, test.isMarketAllowed)
                 }
 
                 // caller previews and redeems

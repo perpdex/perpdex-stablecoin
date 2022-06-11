@@ -71,7 +71,7 @@ describe("PerpdexLongToken withdraw", async () => {
                     base: "10000",
                     quote: "10000",
                 },
-                isMarkeAllowed: false,
+                isMarketAllowed: false,
                 depositAssets: "10",
                 removeLiquidity: 0,
                 expected: "0",
@@ -82,7 +82,7 @@ describe("PerpdexLongToken withdraw", async () => {
                     base: "0",
                     quote: "0",
                 },
-                isMarkeAllowed: true,
+                isMarketAllowed: true,
                 depositAssets: "0",
                 expected: "0", // math error without message
             },
@@ -92,7 +92,7 @@ describe("PerpdexLongToken withdraw", async () => {
                     base: "10000",
                     quote: "10000",
                 },
-                isMarkeAllowed: true,
+                isMarketAllowed: true,
                 depositAssets: "10",
                 expected: "10.009999999999999999",
             },
@@ -108,7 +108,7 @@ describe("PerpdexLongToken withdraw", async () => {
                     await longToken.connect(alice).deposit(parseAssets(test.depositAssets), alice.address)
                 }
 
-                await exchange.connect(owner).setIsMarketAllowed(market.address, test.isMarkeAllowed)
+                await exchange.connect(owner).setIsMarketAllowed(market.address, test.isMarketAllowed)
 
                 expect(await longToken.maxWithdraw(alice.address)).to.eq(parseAssets(test.expected))
             })
@@ -129,7 +129,7 @@ describe("PerpdexLongToken withdraw", async () => {
                     base: "10000",
                     quote: "10000",
                 },
-                isMarkeAllowed: false,
+                isMarketAllowed: false,
                 depositAssets: "10",
                 withdrawAssets: "5",
                 ownerAllowance: "0",
@@ -145,7 +145,7 @@ describe("PerpdexLongToken withdraw", async () => {
                     base: "10000",
                     quote: "10000",
                 },
-                isMarkeAllowed: true,
+                isMarketAllowed: true,
                 depositAssets: "10",
                 withdrawAssets: "0",
                 ownerAllowance: "0",
@@ -161,7 +161,7 @@ describe("PerpdexLongToken withdraw", async () => {
                     base: "10000",
                     quote: "10000",
                 },
-                isMarkeAllowed: true,
+                isMarketAllowed: true,
                 depositAssets: "10",
                 withdrawAssets: "20",
                 ownerAllowance: "0",
@@ -177,7 +177,7 @@ describe("PerpdexLongToken withdraw", async () => {
                     base: "10000",
                     quote: "10000",
                 },
-                isMarkeAllowed: true,
+                isMarketAllowed: true,
                 depositAssets: "10",
                 withdrawAssets: "9.9",
                 ownerAllowance: "0",
@@ -193,7 +193,7 @@ describe("PerpdexLongToken withdraw", async () => {
                     base: "10000",
                     quote: "10000",
                 },
-                isMarkeAllowed: true,
+                isMarketAllowed: true,
                 depositAssets: "10",
                 withdrawAssets: "9.9",
                 ownerAllowance: "0",
@@ -209,7 +209,7 @@ describe("PerpdexLongToken withdraw", async () => {
                     base: "10000",
                     quote: "10000",
                 },
-                isMarkeAllowed: true,
+                isMarketAllowed: true,
                 depositAssets: "10",
                 withdrawAssets: "9.9",
                 ownerAllowance: "9.891",
@@ -225,7 +225,7 @@ describe("PerpdexLongToken withdraw", async () => {
                     base: "10000",
                     quote: "10000",
                 },
-                isMarkeAllowed: true,
+                isMarketAllowed: true,
                 depositAssets: "10",
                 withdrawAssets: "9.9",
                 ownerAllowance: "9.891",
@@ -259,8 +259,8 @@ describe("PerpdexLongToken withdraw", async () => {
                 var totalSharesBefore = await longToken.totalSupply()
 
                 // change market allowance
-                if (test.isMarkeAllowed !== void 0) {
-                    await exchange.connect(owner).setIsMarketAllowed(market.address, test.isMarkeAllowed)
+                if (test.isMarketAllowed !== void 0) {
+                    await exchange.connect(owner).setIsMarketAllowed(market.address, test.isMarketAllowed)
                 }
 
                 // caller previews and withdraws

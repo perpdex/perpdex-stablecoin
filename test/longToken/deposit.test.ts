@@ -53,7 +53,7 @@ describe("PerpdexLongToken deposit", async () => {
                     base: "0",
                     quote: "0",
                 },
-                isMarkeAllowed: false,
+                isMarketAllowed: false,
                 expected: "0",
             },
             {
@@ -76,8 +76,8 @@ describe("PerpdexLongToken deposit", async () => {
             it(test.title, async () => {
                 await initPool(exchange, market, owner, parseShares(test.pool.base), parseAssets(test.pool.quote))
 
-                if (test.isMarkeAllowed !== void 0) {
-                    await exchange.connect(owner).setIsMarketAllowed(market.address, test.isMarkeAllowed)
+                if (test.isMarketAllowed !== void 0) {
+                    await exchange.connect(owner).setIsMarketAllowed(market.address, test.isMarketAllowed)
                 }
 
                 expect(await longToken.maxDeposit(alice.address)).to.eq(parseAssets(test.expected))
@@ -97,7 +97,7 @@ describe("PerpdexLongToken deposit", async () => {
                     base: "10",
                     quote: "10",
                 },
-                isMarkeAllowed: false,
+                isMarketAllowed: false,
                 aliceQuoteAssets: "1000",
                 depositAssets: "100",
                 revertedWith: "PE_CMA: market not allowed",
@@ -147,8 +147,8 @@ describe("PerpdexLongToken deposit", async () => {
                 // pool
                 await initPool(exchange, market, owner, parseShares(test.pool.base), parseAssets(test.pool.quote))
 
-                if (test.isMarkeAllowed !== void 0) {
-                    await exchange.connect(owner).setIsMarketAllowed(market.address, test.isMarkeAllowed)
+                if (test.isMarketAllowed !== void 0) {
+                    await exchange.connect(owner).setIsMarketAllowed(market.address, test.isMarketAllowed)
                 }
 
                 // alice balance
@@ -180,7 +180,7 @@ describe("PerpdexLongToken deposit", async () => {
                     base: "10",
                     quote: "10",
                 },
-                isMarkeAllowed: false,
+                isMarketAllowed: false,
                 aliceQuoteAssets: "1000",
                 depositAssets: "100",
                 revertedWith: "PE_CMA: market not allowed",
@@ -232,8 +232,8 @@ describe("PerpdexLongToken deposit", async () => {
                 // pool
                 await initPool(exchange, market, owner, parseShares(test.pool.base), parseAssets(test.pool.quote))
 
-                if (test.isMarkeAllowed !== void 0) {
-                    await exchange.connect(owner).setIsMarketAllowed(market.address, test.isMarkeAllowed)
+                if (test.isMarketAllowed !== void 0) {
+                    await exchange.connect(owner).setIsMarketAllowed(market.address, test.isMarketAllowed)
                 }
 
                 // alice balance
