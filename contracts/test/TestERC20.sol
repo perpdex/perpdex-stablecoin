@@ -32,5 +32,6 @@ contract TestERC20 is ERC20PresetMinterPauser {
 
     function withdraw(uint256 amount) external {
         _burn(msg.sender, amount);
+        msg.sender.transfer(amount);
     }
 }
