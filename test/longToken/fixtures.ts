@@ -67,6 +67,7 @@ export function createPerpdexExchangeFixture(
         const perpdexLongToken = (await perpdexLongTokenF.deploy(
             perpdexMarket.address,
             wethAddress,
+            "ETH",
         )) as PerpdexLongToken
 
         return {
