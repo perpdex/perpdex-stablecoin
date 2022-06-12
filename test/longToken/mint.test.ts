@@ -54,6 +54,10 @@ describe("PerpdexLongToken mint", async () => {
                 owner = fixture.owner
                 alice = fixture.alice
                 bob = fixture.bob
+
+                await weth.connect(owner).deposit({
+                    value: ethers.utils.parseEther("200"),
+                })
             })
 
             describe("maxMint", async () => {
