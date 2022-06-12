@@ -8,6 +8,7 @@ import { ERC20 } from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 import { SafeCast } from "@openzeppelin/contracts/utils/SafeCast.sol";
 import { FullMath } from "@uniswap/v3-core/contracts/libraries/FullMath.sol";
+import { FixedPoint96 } from "@uniswap/v3-core/contracts/libraries/FixedPoint96.sol";
 import { IPerpdexExchange } from "../deps/perpdex-contract/contracts/interface/IPerpdexExchange.sol";
 import { IPerpdexMarket } from "../deps/perpdex-contract/contracts/interface/IPerpdexMarket.sol";
 import { IWETH9 } from "../deps/perpdex-contract/contracts/interface/external/IWETH9.sol";
@@ -87,7 +88,8 @@ abstract contract PerpdexTokenBase is IERC4626, ReentrancyGuard, ERC20 {
     function convertToShares(uint256 assets) public view override returns (uint256 shares) {
         uint256 supply = totalSupply();
         if (supply == 0) {
-            return FullMath.mulDiv(assets, 10**decimals(), 10**IERC20Metadata(asset).decimals());
+            shares = FullMath.mulDiv(assets, 10**decimals(), 10**IERC20Metadata(asset).decimals());
+            return FullMath.mulDiv(shares, FixedPoint96.Q96, IPerpdexMarket(market).getShareMarkPriceX96());
         }
         return FullMath.mulDiv(assets, supply, totalAssets());
     }
@@ -95,7 +97,8 @@ abstract contract PerpdexTokenBase is IERC4626, ReentrancyGuard, ERC20 {
     function convertToAssets(uint256 shares) public view override returns (uint256 assets) {
         uint256 supply = totalSupply();
         if (supply == 0) {
-            return FullMath.mulDiv(shares, 10**IERC20Metadata(asset).decimals(), 10**decimals());
+            assets = FullMath.mulDiv(shares, 10**IERC20Metadata(asset).decimals(), 10**decimals());
+            return FullMath.mulDiv(assets, IPerpdexMarket(market).getMarkPriceX96(), FixedPoint96.Q96);
         }
         return FullMath.mulDiv(shares, totalAssets(), supply);
     }
