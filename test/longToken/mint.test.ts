@@ -70,7 +70,7 @@ describe("PerpdexLongToken mint", async () => {
                     base: "10",
                     quote: "10",
                 },
-                expected: "0.240999270514668206",
+                expected: "0.246950765959598383",
             },
         ].forEach(test => {
             it(test.title, async () => {
