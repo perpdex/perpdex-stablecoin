@@ -41,12 +41,14 @@ describe("PerpdexLongToken base decimals", async () => {
         bob = fixture.bob
     })
 
+    // for assets
     function parseAssets(amount: string) {
         return parseUnits(amount, wethDecimals)
     }
 
-    function parseShares(amount: string) {
-        return parseUnits(amount, longTokenDecimals)
+    // for shares, perpdex base and quote
+    function parse18(amount: string) {
+        return parseUnits(amount, 18)
     }
 
     it("asset", async () => {
@@ -89,7 +91,6 @@ describe("PerpdexLongToken base decimals", async () => {
         beforeEach(async () => {
             // alice approve longToken of max assets
             await weth.approveForce(alice.address, longToken.address, ethers.constants.MaxUint256)
-            await weth.approveForce(longToken.address, exchange.address, ethers.constants.MaxUint256)
         })
         ;[
             {
@@ -114,7 +115,7 @@ describe("PerpdexLongToken base decimals", async () => {
             },
         ].forEach(test => {
             it(test.title, async () => {
-                await initPool(exchange, market, owner, parseShares(test.pool.base), parseAssets(test.pool.quote))
+                await initPool(fixture, parse18(test.pool.base), parse18(test.pool.quote))
 
                 // alice deposits
                 var depositAssets = parseAssets(test.depositAssets)
@@ -122,10 +123,10 @@ describe("PerpdexLongToken base decimals", async () => {
                     await weth.connect(owner).mint(alice.address, depositAssets)
                     await longToken.connect(alice).deposit(depositAssets, alice.address)
                 }
+                console.log((await longToken.totalAssets()).toString())
+                console.log((await longToken.totalSupply()).toString())
 
-                expect(await longToken.convertToShares(parseAssets(test.convertAssets))).to.eq(
-                    parseShares(test.expected),
-                )
+                expect(await longToken.convertToShares(parseAssets(test.convertAssets))).to.eq(parse18(test.expected))
             })
         })
     })

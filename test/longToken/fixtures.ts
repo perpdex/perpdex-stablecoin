@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
+import { MockContract } from "ethereum-waffle"
 import { BigNumber, Wallet } from "ethers"
 import { ethers, waffle } from "hardhat"
 import IPerpdexPriceFeedJson from "../../deps/perpdex-contract/artifacts/contracts/interface/IPerpdexPriceFeed.sol/IPerpdexPriceFeed.json"
@@ -13,6 +14,8 @@ export interface PerpdexExchangeFixture {
     alice: Wallet
     bob: Wallet
     charlie: Wallet
+    baseDecimals: number
+    priceFeedBase: MockContract
 }
 
 interface FixtureParams {
@@ -23,26 +26,26 @@ export function createPerpdexExchangeFixture(
     params: FixtureParams = { wethDecimals: 18 },
 ): (wallets, provider) => Promise<PerpdexExchangeFixture> {
     return async ([owner, alice, bob, charlie], provider): Promise<PerpdexExchangeFixture> => {
-        let settlementToken = hre.ethers.constants.AddressZero
         const tokenFactory = await ethers.getContractFactory("TestERC20")
         let weth = (await tokenFactory.deploy("TestWETH", "WETH", params.wethDecimals)) as TestERC20
-        settlementToken = weth.address
+        let settlementToken = weth
+        let baseDecimals = 18
 
         // exchange
         const perpdexExchangeFactory = await ethers.getContractFactory("TestPerpdexExchange")
-        const perpdexExchange = (await perpdexExchangeFactory.deploy(settlementToken)) as TestPerpdexExchange
+        const perpdexExchange = (await perpdexExchangeFactory.deploy(settlementToken.address)) as TestPerpdexExchange
 
-        // priceFeed
-        const priceFeed = await waffle.deployMockContract(owner, IPerpdexPriceFeedJson.abi)
-        await priceFeed.mock.getPrice.returns(BigNumber.from(10).pow(12))
-        await priceFeed.mock.decimals.returns(12)
+        // base priceFeed
+        const priceFeedBase = await waffle.deployMockContract(owner, IPerpdexPriceFeedJson.abi)
+        await priceFeedBase.mock.getPrice.returns(BigNumber.from(10).pow(12))
+        await priceFeedBase.mock.decimals.returns(12)
 
         // market
         const perpdexMarketFactory = await ethers.getContractFactory("TestPerpdexMarket")
         const perpdexMarket = (await perpdexMarketFactory.deploy(
             "USD",
             perpdexExchange.address,
-            priceFeed.address,
+            priceFeedBase.address,
             ethers.constants.AddressZero,
         )) as TestPerpdexMarket
 
@@ -62,6 +65,8 @@ export function createPerpdexExchangeFixture(
             alice,
             bob,
             charlie,
+            baseDecimals,
+            priceFeedBase,
         }
     }
 }
