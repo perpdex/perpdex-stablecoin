@@ -47,8 +47,7 @@ abstract contract PerpdexTokenBase is IERC4626, ERC20 {
         if (supply == 0) {
             return FullMath.mulDiv(shares, 10**IERC20Metadata(asset).decimals(), 10**decimals());
         }
-        assets = FullMath.mulDiv(shares, totalAssets(), supply);
-        assets = _convertToAssetDecimals(assets);
+        return FullMath.mulDiv(shares, totalAssets(), supply);
     }
 
     function _convertToPerpdexDecimals(uint256 amount) internal view returns (uint256 assets) {

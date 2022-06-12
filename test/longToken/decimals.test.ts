@@ -63,24 +63,6 @@ describe("PerpdexLongToken base decimals", async () => {
         ;[
             {
                 assetDecimals: 6,
-                title: "account value is zero",
-                pool: {
-                    base: "10000",
-                    quote: "10000",
-                },
-                isMarketAllowed: true,
-                depositAssets: parseUnits("0", 6),
-
-                // args
-                convertToSharesAssets: 0,
-
-                // expected value
-                expectedTotalAssets: 0,
-                expectedConvertToShares: 0,
-            },
-            {
-                assetDecimals: 6,
-                title: "account value > 0",
                 pool: {
                     base: "10000",
                     quote: "10000",
@@ -89,14 +71,17 @@ describe("PerpdexLongToken base decimals", async () => {
                 depositAssets: parseUnits("100", 6),
 
                 // args
-                convertToSharesAssets: parseUnits("50", 6),
+                convertToSharesAssetsArg: parseUnits("50", 6),
+                convertToAssetsSharesArg: parseUnits("50", 18),
 
                 // expected value
+                expectedTotalSupply: parseUnits("99.009900990099009900", 18),
                 expectedTotalAssets: parseUnits("100.999999", 6),
                 expectedConvertToShares: parseUnits("49.014802955641123273", 18),
+                expectedConvertToAssets: parseUnits("51.004999", 6),
             },
         ].forEach(test => {
-            it(`(assetDecimals == ${test.assetDecimals})\t` + test.title, async () => {
+            it(`assetDecimals == ${test.assetDecimals}\t`, async () => {
                 await before(test.assetDecimals)
 
                 await initPool(fixture, parse18(test.pool.base), parse18(test.pool.quote))
@@ -112,8 +97,14 @@ describe("PerpdexLongToken base decimals", async () => {
                     await exchange.connect(owner).setIsMarketAllowed(market.address, test.isMarketAllowed)
                 }
 
+                expect(await longToken.totalSupply()).to.eq(test.expectedTotalSupply)
                 expect(await longToken.totalAssets()).to.eq(test.expectedTotalAssets)
-                expect(await longToken.convertToShares(test.convertToSharesAssets)).to.eq(test.expectedConvertToShares)
+                expect(await longToken.convertToShares(test.convertToSharesAssetsArg)).to.eq(
+                    test.expectedConvertToShares,
+                )
+                expect(await longToken.convertToAssets(test.convertToAssetsSharesArg)).to.eq(
+                    test.expectedConvertToAssets,
+                )
             })
         })
     })
