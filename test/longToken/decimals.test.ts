@@ -55,7 +55,7 @@ describe("PerpdexLongToken base decimals", async () => {
     ;[
         {
             title: "unbalanced pool base quote tests",
-            assetDecimals: 6,
+            assetDecimalsList: [6, 18],
             quoteDecimals: 18,
             pool: {
                 base: "10000",
@@ -75,11 +75,11 @@ describe("PerpdexLongToken base decimals", async () => {
                     totalAssets: {},
 
                     convertToShares: {
-                        assets: parseUnits("25", 6),
+                        assets: parseUnits("50", 6),
                     },
 
                     convertToAssets: {
-                        shares: parseUnits("25", 18),
+                        shares: parseUnits("50", 18),
                     },
 
                     previewDeposit: {
@@ -87,7 +87,7 @@ describe("PerpdexLongToken base decimals", async () => {
                     },
 
                     previewMint: {
-                        shares: parseUnits("48.773350241428083695", 18),
+                        shares: parseUnits("49", 18),
                     },
 
                     previewWithdraw: {
@@ -95,7 +95,7 @@ describe("PerpdexLongToken base decimals", async () => {
                     },
 
                     previewRedeem: {
-                        shares: parseUnits("49.258657209004482538", 18),
+                        shares: parseUnits("49", 18),
                     },
 
                     maxDeposit: {},
@@ -109,184 +109,188 @@ describe("PerpdexLongToken base decimals", async () => {
             },
         },
     ].forEach(test => {
-        describe(`${test.title}, assetDecimals == ${test.assetDecimals}\t`, async () => {
-            beforeEach(async () => {
-                await setupEnvironment(test.assetDecimals, test.quoteDecimals, test.pool.base, test.pool.quote)
-            })
+        describe(test.title, async () => {
+            test.assetDecimalsList.forEach(assetDecimals => {
+                describe(`assetDecimals == ${assetDecimals}\t`, async () => {
+                    beforeEach(async () => {
+                        await setupEnvironment(assetDecimals, test.quoteDecimals, test.pool.base, test.pool.quote)
+                    })
 
-            async function doDeposit() {
-                // alice deposit to perpdex
-                if (test.deposit !== void 0 && test.deposit.assets.gt(0)) {
-                    // mint balance
-                    await weth.connect(owner).mint(alice.address, test.deposit.assets)
+                    async function doDeposit() {
+                        // alice deposit to perpdex
+                        if (test.deposit !== void 0 && test.deposit.assets.gt(0)) {
+                            // mint balance
+                            await weth.connect(owner).mint(alice.address, test.deposit.assets)
 
-                    // deposit
-                    var receiver = toWallet(test.deposit.receiver)
-                    await longToken.connect(alice).deposit(test.deposit.assets, receiver.address)
-                }
+                            // deposit
+                            var receiver = toWallet(test.deposit.receiver)
+                            await longToken.connect(alice).deposit(test.deposit.assets, receiver.address)
+                        }
 
-                // change market allowance
-                await exchange.connect(owner).setIsMarketAllowed(market.address, test.isMarketAllowed)
-            }
+                        // change market allowance
+                        await exchange.connect(owner).setIsMarketAllowed(market.address, test.isMarketAllowed)
+                    }
 
-            function toNumber(x: BigNumber, decimals: number) {
-                return x.div(BigNumber.from(10).pow(decimals)).toNumber()
-            }
+                    function toNumber(x: BigNumber, decimals: number) {
+                        return x.div(BigNumber.from(10).pow(decimals)).toNumber()
+                    }
 
-            it("balanceOf", async () => {
-                await doDeposit()
-                var balanceOfOwner = toWallet(test.deposit.expects.balanceOf.owner)
+                    it("balanceOf", async () => {
+                        await doDeposit()
+                        var balanceOfOwner = toWallet(test.deposit.expects.balanceOf.owner)
 
-                var refVal = await longToken.convertToShares(test.deposit.assets)
-                var refNum = toNumber(refVal, test.quoteDecimals)
-                var num = toNumber(await longToken.balanceOf(balanceOfOwner.address), test.quoteDecimals)
-                expect(num).to.within(refNum * 0.95, refNum * 1.05)
-            })
+                        var refVal = await longToken.convertToShares(test.deposit.assets)
+                        var refNum = toNumber(refVal, test.quoteDecimals)
+                        var num = toNumber(await longToken.balanceOf(balanceOfOwner.address), test.quoteDecimals)
+                        expect(num).to.within(refNum * 0.95, refNum * 1.05)
+                    })
 
-            it("totalSupply", async () => {
-                await doDeposit()
+                    it("totalSupply", async () => {
+                        await doDeposit()
 
-                var refVal = await longToken.convertToShares(test.deposit.assets)
-                var refNum = toNumber(refVal, test.quoteDecimals)
-                var num = toNumber(await longToken.totalSupply(), test.quoteDecimals)
-                expect(num).to.within(refNum * 0.95, refNum * 1.05)
-            })
+                        var refVal = await longToken.convertToShares(test.deposit.assets)
+                        var refNum = toNumber(refVal, test.quoteDecimals)
+                        var num = toNumber(await longToken.totalSupply(), test.quoteDecimals)
+                        expect(num).to.within(refNum * 0.95, refNum * 1.05)
+                    })
 
-            it("totalAssets", async () => {
-                await doDeposit()
-                var refNum = toNumber(test.deposit.assets, test.assetDecimals)
-                var num = toNumber(await longToken.totalAssets(), test.assetDecimals)
-                expect(num).to.within(refNum * 0.95, refNum * 1.05)
-            })
+                    it("totalAssets", async () => {
+                        await doDeposit()
+                        var refNum = toNumber(test.deposit.assets, assetDecimals)
+                        var num = toNumber(await longToken.totalAssets(), assetDecimals)
+                        expect(num).to.within(refNum * 0.95, refNum * 1.05)
+                    })
 
-            it("convertToShares", async () => {
-                var markSharePriceEst = Number(test.pool.base) / Number(test.pool.quote)
+                    it("convertToShares", async () => {
+                        var markSharePriceEst = Number(test.pool.base) / Number(test.pool.quote)
 
-                var argVal = test.deposit.expects.convertToShares.assets
-                // quote -> base
-                var refNum = toNumber(argVal, test.assetDecimals) * markSharePriceEst
+                        var argVal = test.deposit.expects.convertToShares.assets
+                        // quote -> base
+                        var refNum = toNumber(argVal, assetDecimals) * markSharePriceEst
 
-                // total supply == 0
-                var val = await longToken.convertToShares(argVal)
-                var num = toNumber(val, test.quoteDecimals)
-                expect(num).to.within(refNum * 0.95, refNum * 1.05)
+                        // total supply == 0
+                        var val = await longToken.convertToShares(argVal)
+                        var num = toNumber(val, test.quoteDecimals)
+                        expect(num).to.within(refNum * 0.95, refNum * 1.05)
 
-                await doDeposit()
+                        await doDeposit()
 
-                // total supply > 0
-                var val = await longToken.convertToShares(argVal)
-                var num = toNumber(val, test.quoteDecimals)
-                expect(num).to.within(refNum * 0.95, refNum * 1.05)
-            })
+                        // total supply > 0
+                        var val = await longToken.convertToShares(argVal)
+                        var num = toNumber(val, test.quoteDecimals)
+                        expect(num).to.within(refNum * 0.95, refNum * 1.05)
+                    })
 
-            it("convertToAssets", async () => {
-                var markPriceEst = Number(test.pool.quote) / Number(test.pool.base)
+                    it("convertToAssets", async () => {
+                        var markPriceEst = Number(test.pool.quote) / Number(test.pool.base)
 
-                var argVal = test.deposit.expects.convertToAssets.shares
-                // base -> quote
-                var refNum = toNumber(argVal, test.quoteDecimals) * markPriceEst
+                        var argVal = test.deposit.expects.convertToAssets.shares
+                        // base -> quote
+                        var refNum = toNumber(argVal, test.quoteDecimals) * markPriceEst
 
-                // total supply == 0
-                var val = await longToken.convertToAssets(argVal)
-                var num = toNumber(val, test.assetDecimals)
-                expect(num).to.within(refNum * 0.95, refNum * 1.05)
+                        // total supply == 0
+                        var val = await longToken.convertToAssets(argVal)
+                        var num = toNumber(val, assetDecimals)
+                        expect(num).to.within(refNum * 0.95, refNum * 1.05)
 
-                await doDeposit()
+                        await doDeposit()
 
-                // total supply > 0
-                var val = await longToken.convertToAssets(argVal)
-                var num = toNumber(val, test.assetDecimals)
-                expect(num).to.within(refNum * 0.95, refNum * 1.05)
-            })
+                        // total supply > 0
+                        var val = await longToken.convertToAssets(argVal)
+                        var num = toNumber(val, assetDecimals)
+                        expect(num).to.within(refNum * 0.95, refNum * 1.05)
+                    })
 
-            it("previewDeposit", async () => {
-                await doDeposit()
-                var argVal = test.deposit.expects.previewDeposit.assets
-                var refVal = await longToken.convertToShares(argVal)
-                var val = await longToken.previewDeposit(argVal)
+                    it("previewDeposit", async () => {
+                        await doDeposit()
+                        var argVal = test.deposit.expects.previewDeposit.assets
+                        var refVal = await longToken.convertToShares(argVal)
+                        var val = await longToken.previewDeposit(argVal)
 
-                var refNum = toNumber(refVal, test.quoteDecimals)
-                var num = toNumber(val, test.quoteDecimals)
-                expect(num).to.within(refNum * 0.95, refNum * 1.05)
-            })
+                        var refNum = toNumber(refVal, test.quoteDecimals)
+                        var num = toNumber(val, test.quoteDecimals)
+                        expect(num).to.within(refNum * 0.95, refNum * 1.05)
+                    })
 
-            it("previewMint", async () => {
-                await doDeposit()
-                var argVal = test.deposit.expects.previewMint.shares
-                var refVal = await longToken.convertToAssets(argVal)
-                var val = await longToken.previewMint(argVal)
+                    it("previewMint", async () => {
+                        await doDeposit()
+                        var argVal = test.deposit.expects.previewMint.shares
+                        var refVal = await longToken.convertToAssets(argVal)
+                        var val = await longToken.previewMint(argVal)
 
-                var refNum = toNumber(refVal, test.assetDecimals)
-                var num = toNumber(val, test.assetDecimals)
-                expect(num).to.within(refNum * 0.95, refNum * 1.05)
-            })
+                        var refNum = toNumber(refVal, assetDecimals)
+                        var num = toNumber(val, assetDecimals)
+                        expect(num).to.within(refNum * 0.95, refNum * 1.05)
+                    })
 
-            it("previewWithdraw", async () => {
-                await doDeposit()
-                var argVal = test.deposit.expects.previewWithdraw.assets
-                var refVal = await longToken.convertToShares(argVal)
-                var val = await longToken.previewWithdraw(argVal)
+                    it("previewWithdraw", async () => {
+                        await doDeposit()
+                        var argVal = test.deposit.expects.previewWithdraw.assets
+                        var refVal = await longToken.convertToShares(argVal)
+                        var val = await longToken.previewWithdraw(argVal)
 
-                var refNum = toNumber(refVal, test.quoteDecimals)
-                var num = toNumber(val, test.quoteDecimals)
-                expect(num).to.within(refNum * 0.95, refNum * 1.05)
-            })
+                        var refNum = toNumber(refVal, test.quoteDecimals)
+                        var num = toNumber(val, test.quoteDecimals)
+                        expect(num).to.within(refNum * 0.95, refNum * 1.05)
+                    })
 
-            it("previewRedeem", async () => {
-                await doDeposit()
-                var argVal = test.deposit.expects.previewRedeem.shares
-                var refVal = await longToken.convertToAssets(argVal)
-                var val = await longToken.previewRedeem(argVal)
+                    it("previewRedeem", async () => {
+                        await doDeposit()
+                        var argVal = test.deposit.expects.previewRedeem.shares
+                        var refVal = await longToken.convertToAssets(argVal)
+                        var val = await longToken.previewRedeem(argVal)
 
-                var refNum = toNumber(refVal, test.assetDecimals)
-                var num = toNumber(val, test.assetDecimals)
-                expect(num).to.within(refNum * 0.95, refNum * 1.05)
-            })
+                        var refNum = toNumber(refVal, assetDecimals)
+                        var num = toNumber(val, assetDecimals)
+                        expect(num).to.within(refNum * 0.95, refNum * 1.05)
+                    })
 
-            it("maxDeposit", async () => {
-                await doDeposit()
-                var poolInfo = await market.poolInfo()
-                var [refBaseVal, _] = await market.getLiquidityValue(poolInfo.totalLiquidity)
-                var val = await longToken.maxDeposit(alice.address)
+                    it("maxDeposit", async () => {
+                        await doDeposit()
+                        var poolInfo = await market.poolInfo()
+                        var [refBaseVal, _] = await market.getLiquidityValue(poolInfo.totalLiquidity)
+                        var val = await longToken.maxDeposit(alice.address)
 
-                var refNum = toNumber(refBaseVal, test.quoteDecimals)
-                var num = toNumber(val, test.assetDecimals)
+                        var refNum = toNumber(refBaseVal, test.quoteDecimals) // pool base decimals == pool quote decimals
+                        var num = toNumber(val, assetDecimals)
 
-                expect(num).to.within(refNum * 0.01, refNum * 0.05)
-            })
+                        expect(num).to.within(refNum * 0.01, refNum * 0.05)
+                    })
 
-            it("maxMint", async () => {
-                await doDeposit()
-                var poolInfo = await market.poolInfo()
-                var [_, refQuoteVal] = await market.getLiquidityValue(poolInfo.totalLiquidity)
-                var val = await longToken.maxMint(alice.address)
+                    it("maxMint", async () => {
+                        await doDeposit()
+                        var poolInfo = await market.poolInfo()
+                        var [_, refQuoteVal] = await market.getLiquidityValue(poolInfo.totalLiquidity)
+                        var val = await longToken.maxMint(alice.address)
 
-                var refNum = toNumber(refQuoteVal, test.quoteDecimals)
-                var num = toNumber(val, test.quoteDecimals)
+                        var refNum = toNumber(refQuoteVal, test.quoteDecimals)
+                        var num = toNumber(val, test.quoteDecimals)
 
-                expect(num).to.within(refNum * 0.01, refNum * 0.05)
-            })
+                        expect(num).to.within(refNum * 0.01, refNum * 0.05)
+                    })
 
-            it("maxWithdraw", async () => {
-                await doDeposit()
-                var refVal = await longToken.totalAssets()
-                var val = await longToken.maxWithdraw(alice.address)
+                    it("maxWithdraw", async () => {
+                        await doDeposit()
+                        var refVal = await longToken.totalAssets()
+                        var val = await longToken.maxWithdraw(alice.address)
 
-                var refNum = toNumber(refVal, test.assetDecimals)
-                var num = toNumber(val, test.assetDecimals)
+                        var refNum = toNumber(refVal, assetDecimals)
+                        var num = toNumber(val, assetDecimals)
 
-                expect(num).to.within(refNum * 0.95, refNum * 1.05)
-            })
+                        expect(num).to.within(refNum * 0.95, refNum * 1.05)
+                    })
 
-            it("maxRedeem", async () => {
-                await doDeposit()
-                var refVal = await longToken.totalSupply()
-                var val = await longToken.maxRedeem(alice.address)
+                    it("maxRedeem", async () => {
+                        await doDeposit()
+                        var refVal = await longToken.totalSupply()
+                        var val = await longToken.maxRedeem(alice.address)
 
-                var refNum = toNumber(refVal, test.quoteDecimals)
-                var num = toNumber(val, test.quoteDecimals)
+                        var refNum = toNumber(refVal, test.quoteDecimals)
+                        var num = toNumber(val, test.quoteDecimals)
 
-                expect(num).to.within(refNum * 0.95, refNum * 1.05)
+                        expect(num).to.within(refNum * 0.95, refNum * 1.05)
+                    })
+                })
             })
         })
     })
