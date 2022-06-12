@@ -7,6 +7,9 @@ import { SafeCast } from "@openzeppelin/contracts/utils/SafeCast.sol";
 import { SafeMath } from "@openzeppelin/contracts/math/SafeMath.sol";
 import { PerpdexTokenBase } from "./PerpdexTokenBase.sol";
 
+// This class should be responsible for the high layers and not the low layers
+// Specifically, you should not rely directly on decimals, WETH, Perpdex
+// Let Perpdex TokenBase absorb those specifications
 contract PerpdexLongToken is PerpdexTokenBase {
     using SafeCast for int256;
     using SafeMath for uint256;
