@@ -7,7 +7,7 @@ import { PerpdexLongToken, TestERC20, TestPerpdexExchange, TestPerpdexMarket } f
 import { createPerpdexExchangeFixture } from "./fixtures"
 import { initPool } from "./helpers"
 
-describe("PerpdexLongToken base decimals", async () => {
+describe("PerpdexLongToken decimals", async () => {
     let loadFixture = waffle.createFixtureLoader(waffle.provider.getWallets())
     let fixture
 
@@ -52,9 +52,25 @@ describe("PerpdexLongToken base decimals", async () => {
         await initPool(fixture, parseUnits(poolBase, quoteDecimals), parseUnits(poolQuote, quoteDecimals))
     }
 
+    // alice deposit to perpdex
+    async function depositByWeth(test, deposit) {
+        // mint balance
+        await weth.connect(owner).mint(alice.address, deposit.assets)
+
+        // deposit
+        var receiver = toWallet(deposit.receiver)
+        await longToken.connect(alice).deposit(deposit.assets, receiver.address)
+
+        // change market allowance
+        await exchange.connect(owner).setIsMarketAllowed(market.address, test.isMarketAllowed)
+    }
+
+    function toNumber(x: BigNumber, decimals: number) {
+        return x.div(BigNumber.from(10).pow(decimals)).toNumber()
+    }
+
     ;[
         {
-            title: "unbalanced pool base quote tests",
             assetDecimalsList: [6, 18],
             quoteDecimals: 18,
             pool: {
@@ -63,100 +79,84 @@ describe("PerpdexLongToken base decimals", async () => {
             },
             isMarketAllowed: true,
 
-            deposit: {
-                assets: parseUnits("100", 6),
-                receiver: "alice",
-                expects: {
-                    balanceOf: {
-                        owner: "alice",
+            deposits: [
+                {
+                    depositFunc: depositByWeth,
+                    assets: parseUnits("100", 6),
+                    receiver: "alice",
+                    expects: {
+                        balanceOf: {
+                            owner: "alice",
+                        },
+
+                        totalSupply: {},
+                        totalAssets: {},
+
+                        convertToShares: {
+                            assets: parseUnits("50", 6),
+                        },
+
+                        convertToAssets: {
+                            shares: parseUnits("50", 18),
+                        },
+
+                        previewDeposit: {
+                            assets: parseUnits("50", 6),
+                        },
+
+                        previewMint: {
+                            shares: parseUnits("49", 18),
+                        },
+
+                        previewWithdraw: {
+                            assets: parseUnits("50", 6),
+                        },
+
+                        previewRedeem: {
+                            shares: parseUnits("49", 18),
+                        },
+
+                        maxDeposit: {},
+
+                        maxMint: {},
+
+                        maxWithdraw: {},
+
+                        maxRedeem: {},
                     },
-
-                    totalSupply: {},
-                    totalAssets: {},
-
-                    convertToShares: {
-                        assets: parseUnits("50", 6),
-                    },
-
-                    convertToAssets: {
-                        shares: parseUnits("50", 18),
-                    },
-
-                    previewDeposit: {
-                        assets: parseUnits("50", 6),
-                    },
-
-                    previewMint: {
-                        shares: parseUnits("49", 18),
-                    },
-
-                    previewWithdraw: {
-                        assets: parseUnits("50", 6),
-                    },
-
-                    previewRedeem: {
-                        shares: parseUnits("49", 18),
-                    },
-
-                    maxDeposit: {},
-
-                    maxMint: {},
-
-                    maxWithdraw: {},
-
-                    maxRedeem: {},
                 },
-            },
+            ],
         },
     ].forEach(test => {
-        describe(test.title, async () => {
-            test.assetDecimalsList.forEach(assetDecimals => {
-                describe(`assetDecimals == ${assetDecimals}\t`, async () => {
-                    beforeEach(async () => {
-                        await setupEnvironment(assetDecimals, test.quoteDecimals, test.pool.base, test.pool.quote)
-                    })
+        test.assetDecimalsList.forEach(assetDecimals => {
+            describe(`assetDecimals == ${assetDecimals}\t`, async () => {
+                beforeEach(async () => {
+                    await setupEnvironment(assetDecimals, test.quoteDecimals, test.pool.base, test.pool.quote)
+                })
 
-                    async function doDeposit() {
-                        // alice deposit to perpdex
-                        if (test.deposit !== void 0 && test.deposit.assets.gt(0)) {
-                            // mint balance
-                            await weth.connect(owner).mint(alice.address, test.deposit.assets)
-
-                            // deposit
-                            var receiver = toWallet(test.deposit.receiver)
-                            await longToken.connect(alice).deposit(test.deposit.assets, receiver.address)
-                        }
-
-                        // change market allowance
-                        await exchange.connect(owner).setIsMarketAllowed(market.address, test.isMarketAllowed)
-                    }
-
-                    function toNumber(x: BigNumber, decimals: number) {
-                        return x.div(BigNumber.from(10).pow(decimals)).toNumber()
-                    }
-
+                test.deposits.forEach(deposit => {
                     it("balanceOf", async () => {
-                        await doDeposit()
-                        var balanceOfOwner = toWallet(test.deposit.expects.balanceOf.owner)
+                        await deposit.depositFunc(test, deposit)
+                        var balanceOfOwner = toWallet(deposit.expects.balanceOf.owner)
 
-                        var refVal = await longToken.convertToShares(test.deposit.assets)
+                        var refVal = await longToken.convertToShares(deposit.assets)
                         var refNum = toNumber(refVal, test.quoteDecimals)
                         var num = toNumber(await longToken.balanceOf(balanceOfOwner.address), test.quoteDecimals)
                         expect(num).to.within(refNum * 0.95, refNum * 1.05)
                     })
 
                     it("totalSupply", async () => {
-                        await doDeposit()
+                        await deposit.depositFunc(test, deposit)
 
-                        var refVal = await longToken.convertToShares(test.deposit.assets)
+                        var refVal = await longToken.convertToShares(deposit.assets)
                         var refNum = toNumber(refVal, test.quoteDecimals)
                         var num = toNumber(await longToken.totalSupply(), test.quoteDecimals)
                         expect(num).to.within(refNum * 0.95, refNum * 1.05)
                     })
 
                     it("totalAssets", async () => {
-                        await doDeposit()
-                        var refNum = toNumber(test.deposit.assets, assetDecimals)
+                        await deposit.depositFunc(test, deposit)
+                        var refNum = toNumber(deposit.assets, assetDecimals)
                         var num = toNumber(await longToken.totalAssets(), assetDecimals)
                         expect(num).to.within(refNum * 0.95, refNum * 1.05)
                     })
@@ -164,7 +164,7 @@ describe("PerpdexLongToken base decimals", async () => {
                     it("convertToShares", async () => {
                         var markSharePriceEst = Number(test.pool.base) / Number(test.pool.quote)
 
-                        var argVal = test.deposit.expects.convertToShares.assets
+                        var argVal = deposit.expects.convertToShares.assets
                         // quote -> base
                         var refNum = toNumber(argVal, assetDecimals) * markSharePriceEst
 
@@ -173,7 +173,7 @@ describe("PerpdexLongToken base decimals", async () => {
                         var num = toNumber(val, test.quoteDecimals)
                         expect(num).to.within(refNum * 0.95, refNum * 1.05)
 
-                        await doDeposit()
+                        await deposit.depositFunc(test, deposit)
 
                         // total supply > 0
                         var val = await longToken.convertToShares(argVal)
@@ -184,7 +184,7 @@ describe("PerpdexLongToken base decimals", async () => {
                     it("convertToAssets", async () => {
                         var markPriceEst = Number(test.pool.quote) / Number(test.pool.base)
 
-                        var argVal = test.deposit.expects.convertToAssets.shares
+                        var argVal = deposit.expects.convertToAssets.shares
                         // base -> quote
                         var refNum = toNumber(argVal, test.quoteDecimals) * markPriceEst
 
@@ -193,7 +193,7 @@ describe("PerpdexLongToken base decimals", async () => {
                         var num = toNumber(val, assetDecimals)
                         expect(num).to.within(refNum * 0.95, refNum * 1.05)
 
-                        await doDeposit()
+                        await deposit.depositFunc(test, deposit)
 
                         // total supply > 0
                         var val = await longToken.convertToAssets(argVal)
@@ -202,8 +202,8 @@ describe("PerpdexLongToken base decimals", async () => {
                     })
 
                     it("previewDeposit", async () => {
-                        await doDeposit()
-                        var argVal = test.deposit.expects.previewDeposit.assets
+                        await deposit.depositFunc(test, deposit)
+                        var argVal = deposit.expects.previewDeposit.assets
                         var refVal = await longToken.convertToShares(argVal)
                         var val = await longToken.previewDeposit(argVal)
 
@@ -213,8 +213,8 @@ describe("PerpdexLongToken base decimals", async () => {
                     })
 
                     it("previewMint", async () => {
-                        await doDeposit()
-                        var argVal = test.deposit.expects.previewMint.shares
+                        await deposit.depositFunc(test, deposit)
+                        var argVal = deposit.expects.previewMint.shares
                         var refVal = await longToken.convertToAssets(argVal)
                         var val = await longToken.previewMint(argVal)
 
@@ -224,8 +224,8 @@ describe("PerpdexLongToken base decimals", async () => {
                     })
 
                     it("previewWithdraw", async () => {
-                        await doDeposit()
-                        var argVal = test.deposit.expects.previewWithdraw.assets
+                        await deposit.depositFunc(test, deposit)
+                        var argVal = deposit.expects.previewWithdraw.assets
                         var refVal = await longToken.convertToShares(argVal)
                         var val = await longToken.previewWithdraw(argVal)
 
@@ -235,8 +235,8 @@ describe("PerpdexLongToken base decimals", async () => {
                     })
 
                     it("previewRedeem", async () => {
-                        await doDeposit()
-                        var argVal = test.deposit.expects.previewRedeem.shares
+                        await deposit.depositFunc(test, deposit)
+                        var argVal = deposit.expects.previewRedeem.shares
                         var refVal = await longToken.convertToAssets(argVal)
                         var val = await longToken.previewRedeem(argVal)
 
@@ -246,7 +246,7 @@ describe("PerpdexLongToken base decimals", async () => {
                     })
 
                     it("maxDeposit", async () => {
-                        await doDeposit()
+                        await deposit.depositFunc(test, deposit)
                         var poolInfo = await market.poolInfo()
                         var [refBaseVal, _] = await market.getLiquidityValue(poolInfo.totalLiquidity)
                         var val = await longToken.maxDeposit(alice.address)
@@ -258,7 +258,7 @@ describe("PerpdexLongToken base decimals", async () => {
                     })
 
                     it("maxMint", async () => {
-                        await doDeposit()
+                        await deposit.depositFunc(test, deposit)
                         var poolInfo = await market.poolInfo()
                         var [_, refQuoteVal] = await market.getLiquidityValue(poolInfo.totalLiquidity)
                         var val = await longToken.maxMint(alice.address)
@@ -270,7 +270,7 @@ describe("PerpdexLongToken base decimals", async () => {
                     })
 
                     it("maxWithdraw", async () => {
-                        await doDeposit()
+                        await deposit.depositFunc(test, deposit)
                         var refVal = await longToken.totalAssets()
                         var val = await longToken.maxWithdraw(alice.address)
 
@@ -281,7 +281,7 @@ describe("PerpdexLongToken base decimals", async () => {
                     })
 
                     it("maxRedeem", async () => {
-                        await doDeposit()
+                        await deposit.depositFunc(test, deposit)
                         var refVal = await longToken.totalSupply()
                         var val = await longToken.maxRedeem(alice.address)
 
