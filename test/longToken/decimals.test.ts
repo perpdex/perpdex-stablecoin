@@ -91,6 +91,16 @@ describe("PerpdexLongToken base decimals", async () => {
                 shares: parseUnits("48.773350241428083695", 18),
                 expected: parseUnits("50", 6),
             },
+
+            previewWithdraw: {
+                assets: parseUnits("50", 6),
+                expected: parseUnits("49.258657209004482538", 18),
+            },
+
+            previewRedeem: {
+                shares: parseUnits("49.258657209004482538", 18),
+                expected: parseUnits("50", 6),
+            },
         },
     ].forEach(test => {
         describe(`assetDecimals == ${test.assetDecimals}\t`, async () => {
@@ -140,6 +150,16 @@ describe("PerpdexLongToken base decimals", async () => {
 
             it("previewMint", async () => {
                 expect(await longToken.previewMint(test.previewMint.shares)).to.eq(test.previewMint.expected)
+            })
+
+            it("previewWithdraw", async () => {
+                expect(await longToken.previewWithdraw(test.previewWithdraw.assets)).to.eq(
+                    test.previewWithdraw.expected,
+                )
+            })
+
+            it("previewRedeem", async () => {
+                expect(await longToken.previewRedeem(test.previewRedeem.shares)).to.eq(test.previewRedeem.expected)
             })
         })
     })
