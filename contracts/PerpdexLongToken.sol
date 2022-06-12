@@ -145,7 +145,7 @@ contract PerpdexLongToken is PerpdexTokenBase {
         _burn(owner, shares);
 
         // withdraw
-        _withdrawFromPerpdex(_convertToPerpdexDecimals(assets));
+        _withdrawFromPerpdex(assets);
 
         emit Withdraw(msg.sender, receiver, owner, assets, shares);
     }
