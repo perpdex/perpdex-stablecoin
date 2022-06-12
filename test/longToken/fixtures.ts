@@ -31,12 +31,16 @@ export function createPerpdexExchangeFixture(
         let weth = (await tokenFactory.deploy("TestWETH", "WETH", params.wethDecimals)) as TestERC20
         let settlementTokenAddress
         let wethAddress
+        let naitiveTokenSymbol
+
         if (params.settlementToken === "weth") {
             settlementTokenAddress = weth.address
             wethAddress = ethers.constants.AddressZero
+            naitiveTokenSymbol = ""
         } else if (params.settlementToken === "ETH") {
             settlementTokenAddress = ethers.constants.AddressZero
             wethAddress = weth.address
+            naitiveTokenSymbol = "ETH"
         }
 
         let baseDecimals = 18
@@ -67,7 +71,7 @@ export function createPerpdexExchangeFixture(
         const perpdexLongToken = (await perpdexLongTokenF.deploy(
             perpdexMarket.address,
             wethAddress,
-            "ETH",
+            naitiveTokenSymbol,
         )) as PerpdexLongToken
 
         return {

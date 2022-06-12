@@ -87,7 +87,6 @@ describe("PerpdexLongToken decimals", async () => {
     }
 
     ;[
-        /*
         {
             settlementToken: "weth",
             assetDecimals: 6,
@@ -144,7 +143,6 @@ describe("PerpdexLongToken decimals", async () => {
                 },
             },
         },
-        */
         {
             settlementToken: "ETH",
             assetDecimals: 18,
@@ -239,7 +237,6 @@ describe("PerpdexLongToken decimals", async () => {
                 expect(num).to.within(refNum * 0.95, refNum * 1.05)
             })
 
-            /*
             it("convertToShares", async () => {
                 var markSharePriceEst = Number(test.pool.base) / Number(test.pool.quote)
 
@@ -369,7 +366,6 @@ describe("PerpdexLongToken decimals", async () => {
 
                 expect(num).to.within(refNum * 0.95, refNum * 1.05)
             })
-            */
         })
     })
 })
