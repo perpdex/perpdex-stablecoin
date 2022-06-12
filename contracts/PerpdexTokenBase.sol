@@ -62,6 +62,8 @@ abstract contract PerpdexTokenBase is IERC4626, ReentrancyGuard, ERC20 {
         exchange = exchangeVar;
     }
 
+    receive() external payable {}
+
     // make ERC20 external functions non reentrant
 
     function transfer(address recipient, uint256 amount) public override nonReentrant returns (bool) {
