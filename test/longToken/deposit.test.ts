@@ -54,10 +54,6 @@ describe("PerpdexLongToken deposit", async () => {
                 owner = fixture.owner
                 alice = fixture.alice
                 bob = fixture.bob
-
-                await weth.connect(owner).deposit({
-                    value: ethers.utils.parseEther("200"),
-                })
             })
 
             describe("maxDeposit", async () => {
@@ -183,7 +179,7 @@ describe("PerpdexLongToken deposit", async () => {
                 })
             })
 
-            describe("deposit", async () => {
+            describe("deposit or depositETH", async () => {
                 beforeEach(async () => {
                     // alice approve longToken of max assets
                     await weth.approveForce(alice.address, longToken.address, ethers.constants.MaxUint256)
@@ -259,7 +255,13 @@ describe("PerpdexLongToken deposit", async () => {
                         var previewSubject = longToken.connect(alice).previewDeposit(depositAssets)
 
                         // alice deposits
-                        var depositSubject = longToken.connect(alice).deposit(depositAssets, alice.address)
+                        if (fixtureParams.settlementToken === "ETH") {
+                            var depositSubject = longToken
+                                .connect(alice)
+                                .depositETH(alice.address, { value: depositAssets })
+                        } else {
+                            var depositSubject = longToken.connect(alice).deposit(depositAssets, alice.address)
+                        }
 
                         // assert
                         if (test.revertedWith !== void 0) {
@@ -278,7 +280,11 @@ describe("PerpdexLongToken deposit", async () => {
 
                             // asset
                             expect(await longToken.totalAssets()).to.eq(parseAssets(test.totalAssetsAfter))
-                            expect(await weth.balanceOf(alice.address)).to.eq(parseAssets(test.aliceAssetsAfter))
+                            if (fixtureParams.settlementToken === "ETH") {
+                                expect(await depositSubject).to.changeEtherBalance(alice, depositAssets)
+                            } else {
+                                expect(await weth.balanceOf(alice.address)).to.eq(parseAssets(test.aliceAssetsAfter))
+                            }
 
                             // preview <= shares
                             expect(await previewSubject).to.lte(mintedShares)
