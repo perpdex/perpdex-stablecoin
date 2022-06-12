@@ -7,7 +7,7 @@ import { PerpdexLongToken, TestERC20, TestPerpdexExchange, TestPerpdexMarket } f
 import { createPerpdexExchangeFixture } from "./fixtures"
 import { initPool } from "./helpers"
 
-describe("PerpdexLongToken deposit", async () => {
+describe("PerpdexLongToken depositETH", async () => {
     let loadFixture = waffle.createFixtureLoader(waffle.provider.getWallets())
     let fixture
 
@@ -31,10 +31,6 @@ describe("PerpdexLongToken deposit", async () => {
 
     ;[
         {
-            settlementToken: "weth",
-            wethDecimals: 18,
-        },
-        {
             settlementToken: "ETH",
             wethDecimals: 18,
         },
@@ -54,13 +50,6 @@ describe("PerpdexLongToken deposit", async () => {
                 owner = fixture.owner
                 alice = fixture.alice
                 bob = fixture.bob
-
-                // deposit ETH into wETH contract
-                if (fixtureParams.settlementToken === "ETH") {
-                    await weth.connect(owner).deposit({
-                        value: ethers.utils.parseEther("100"),
-                    })
-                }
             })
 
             describe("maxDeposit", async () => {
@@ -262,7 +251,13 @@ describe("PerpdexLongToken deposit", async () => {
                         var previewSubject = longToken.connect(alice).previewDeposit(depositAssets)
 
                         // alice deposits
-                        var depositSubject = longToken.connect(alice).deposit(depositAssets, alice.address)
+                        if (fixtureParams.settlementToken === "ETH") {
+                            var depositSubject = longToken
+                                .connect(alice)
+                                .depositETH(alice.address, { value: depositAssets })
+                        } else {
+                            var depositSubject = longToken.connect(alice).deposit(depositAssets, alice.address)
+                        }
 
                         // assert
                         if (test.revertedWith !== void 0) {

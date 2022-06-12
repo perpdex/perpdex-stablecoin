@@ -68,10 +68,6 @@ describe("PerpdexLongToken withdraw", async () => {
                 alice = fixture.alice
                 bob = fixture.bob
                 charlie = fixture.charlie
-
-                await weth.connect(owner).deposit({
-                    value: ethers.utils.parseEther("200"),
-                })
             })
 
             describe("maxWithdraw", async () => {
