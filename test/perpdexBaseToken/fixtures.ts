@@ -48,6 +48,7 @@ export function createPerpdexTokenBaseFixture(): (wallets, provider) => Promise<
             perpdexMarket.address,
             "TestToken",
             "TT",
+            ethers.constants.AddressZero,
         )) as TestPerpdexTokenBase
 
         return {

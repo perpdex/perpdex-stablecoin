@@ -9,8 +9,9 @@ contract TestPerpdexTokenBase is PerpdexTokenBase {
     constructor(
         address marketArg,
         string memory namePrefix,
-        string memory symbolPrefix
-    ) PerpdexTokenBase(marketArg, namePrefix, symbolPrefix) {}
+        string memory symbolPrefix,
+        address wethArg
+    ) PerpdexTokenBase(marketArg, namePrefix, symbolPrefix, "ETH", wethArg) {}
 
     function previewDeposit(uint256 assets) external view override returns (uint256 shares) {}
 
@@ -19,6 +20,14 @@ contract TestPerpdexTokenBase is PerpdexTokenBase {
     function previewWithdraw(uint256 assets) external view override returns (uint256 shares) {}
 
     function previewRedeem(uint256 shares) external view override returns (uint256 assets) {}
+
+    function maxDeposit(address receiver) external view override returns (uint256 maxAssets) {}
+
+    function maxMint(address receiver) external view override returns (uint256 maxShares) {}
+
+    function maxWithdraw(address owner) external view override returns (uint256 maxAssets) {}
+
+    function maxRedeem(address owner) external view override returns (uint256 maxShares) {}
 
     function mint(uint256 shares, address receiver) external override returns (uint256 assets) {}
 
@@ -43,5 +52,9 @@ contract TestPerpdexTokenBase is PerpdexTokenBase {
         uint256 amount
     ) external {
         _spendAllowance(owner, spender, amount);
+    }
+
+    function testMint(address receiver, uint256 shares) external {
+        _mint(receiver, shares);
     }
 }

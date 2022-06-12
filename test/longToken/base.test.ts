@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 import { expect } from "chai"
-import { Wallet } from "ethers"
+import { BigNumber, Wallet } from "ethers"
 import { parseUnits } from "ethers/lib/utils"
 import { ethers, waffle } from "hardhat"
 import { PerpdexLongToken, TestERC20, TestPerpdexExchange, TestPerpdexMarket } from "../../typechain"
@@ -20,6 +20,8 @@ describe("PerpdexLongToken base", async () => {
     let owner: Wallet
     let alice: Wallet
     let bob: Wallet
+
+    const Q96 = BigNumber.from(2).pow(96)
 
     beforeEach(async () => {
         fixture = await loadFixture(createPerpdexExchangeFixture())
@@ -85,18 +87,48 @@ describe("PerpdexLongToken base", async () => {
         beforeEach(async () => {
             // alice approve longToken of max assets
             await weth.approveForce(alice.address, longToken.address, ethers.constants.MaxUint256)
-            await weth.approveForce(longToken.address, exchange.address, ethers.constants.MaxUint256)
         })
         ;[
             {
-                title: "totalSupply == 0",
+                title: "totalSupply == 0 and pool is empty",
                 pool: {
                     base: "0",
                     quote: "0",
                 },
                 depositAssets: "0",
                 convertAssets: "5",
+                revertedWith: "", //  uniswap full math muldiv error in markPrice calculation
+            },
+            {
+                title: "totalSupply == 0 and pool has liquidity",
+                pool: {
+                    base: "10000",
+                    quote: "10000",
+                },
+                depositAssets: "0",
+                convertAssets: "5",
                 expected: "5",
+            },
+            {
+                title: "totalSupply == 0 and pool has liquidity and base rebased",
+                pool: {
+                    base: "10000",
+                    quote: "10000",
+                    baseBalancePerShareX96: Q96.mul(2),
+                },
+                depositAssets: "0",
+                convertAssets: "5",
+                expected: "5",
+            },
+            {
+                title: "totalSupply == 0 and pool is unbalanced",
+                pool: {
+                    base: "10000",
+                    quote: "20000",
+                },
+                depositAssets: "0",
+                convertAssets: "5",
+                expected: "2.5",
             },
             {
                 title: "totalSupply != 0",
@@ -110,7 +142,12 @@ describe("PerpdexLongToken base", async () => {
             },
         ].forEach(test => {
             it(test.title, async () => {
-                await initPool(exchange, market, owner, parseShares(test.pool.base), parseAssets(test.pool.quote))
+                await initPool(
+                    fixture,
+                    parseShares(test.pool.base),
+                    parseShares(test.pool.quote),
+                    test.pool.baseBalancePerShareX96,
+                )
 
                 // alice deposits
                 var depositAssets = parseAssets(test.depositAssets)
@@ -119,9 +156,13 @@ describe("PerpdexLongToken base", async () => {
                     await longToken.connect(alice).deposit(depositAssets, alice.address)
                 }
 
-                expect(await longToken.convertToShares(parseAssets(test.convertAssets))).to.eq(
-                    parseShares(test.expected),
-                )
+                var subject = longToken.convertToShares(parseAssets(test.convertAssets))
+
+                if (test.revertedWith !== void 0) {
+                    await expect(subject).to.revertedWith(test.revertedWith)
+                } else {
+                    expect(await subject).to.eq(parseShares(test.expected))
+                }
             })
         })
     })
@@ -130,18 +171,48 @@ describe("PerpdexLongToken base", async () => {
         beforeEach(async () => {
             // alice approve longToken of max assets
             await weth.approveForce(alice.address, longToken.address, ethers.constants.MaxUint256)
-            await weth.approveForce(longToken.address, exchange.address, ethers.constants.MaxUint256)
         })
         ;[
             {
-                title: "totalSupply == 0",
+                title: "totalSupply == 0 and pool is empty",
                 pool: {
                     base: "0",
                     quote: "0",
                 },
                 depositAssets: "0",
                 convertShares: "5",
+                revertedWith: "", //  uniswap full math muldiv error in markPrice calculation
+            },
+            {
+                title: "totalSupply == 0 and pool has liquidity",
+                pool: {
+                    base: "10000",
+                    quote: "10000",
+                },
+                depositAssets: "0",
+                convertShares: "5",
                 expected: "5",
+            },
+            {
+                title: "totalSupply == 0 and pool has liquidity and base rebased",
+                pool: {
+                    base: "10000",
+                    quote: "10000",
+                    baseBalancePerShareX96: Q96.mul(2),
+                },
+                depositAssets: "0",
+                convertShares: "5",
+                expected: "5",
+            },
+            {
+                title: "totalSupply == 0 and pool is unbalanced",
+                pool: {
+                    base: "10000",
+                    quote: "20000",
+                },
+                depositAssets: "0",
+                convertShares: "5",
+                expected: "10",
             },
             {
                 title: "totalSupply != 0",
@@ -155,7 +226,12 @@ describe("PerpdexLongToken base", async () => {
             },
         ].forEach(test => {
             it(test.title, async () => {
-                await initPool(exchange, market, owner, parseShares(test.pool.base), parseAssets(test.pool.quote))
+                await initPool(
+                    fixture,
+                    parseShares(test.pool.base),
+                    parseShares(test.pool.quote),
+                    test.pool.baseBalancePerShareX96,
+                )
 
                 // alice deposits
                 var depositAssets = parseAssets(test.depositAssets)
@@ -164,9 +240,13 @@ describe("PerpdexLongToken base", async () => {
                     await longToken.connect(alice).deposit(depositAssets, alice.address)
                 }
 
-                expect(await longToken.convertToAssets(parseShares(test.convertShares))).to.eq(
-                    parseShares(test.expected),
-                )
+                var subject = longToken.convertToAssets(parseShares(test.convertShares))
+
+                if (test.revertedWith !== void 0) {
+                    await expect(subject).to.revertedWith(test.revertedWith)
+                } else {
+                    expect(await subject).to.eq(parseAssets(test.expected))
+                }
             })
         })
     })

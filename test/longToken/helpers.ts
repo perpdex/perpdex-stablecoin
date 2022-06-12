@@ -1,7 +1,13 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
+import { BigNumber } from "ethers"
 import { ethers } from "hardhat"
 
-export async function initPool(exchange, market, owner, base, quote): Promise<void> {
+export async function initPool(fixture, base, quote, baseBalancePerShareX96 = void 0): Promise<void> {
+    let exchange = fixture.perpdexExchange
+    let market = fixture.perpdexMarket
+    let owner = fixture.owner
+    let priceFeedBase = fixture.priceFeedBase
+
     await market.connect(owner).setFundingMaxPremiumRatio(0)
     await exchange.connect(owner).setIsMarketAllowed(market.address, true)
 
@@ -14,6 +20,9 @@ export async function initPool(exchange, market, owner, base, quote): Promise<vo
     )
 
     if (base.gt(0) && quote.gt(0)) {
+        // mock price feed before add liquidity
+        var basePrice = quote.div(base).mul(BigNumber.from(10).pow(await priceFeedBase.decimals()))
+        await priceFeedBase.mock.getPrice.returns(basePrice)
         await exchange.connect(owner).addLiquidity({
             market: market.address,
             base: base,
@@ -22,5 +31,12 @@ export async function initPool(exchange, market, owner, base, quote): Promise<vo
             minQuote: 0,
             deadline: ethers.constants.MaxUint256,
         })
+        if (baseBalancePerShareX96) {
+            const poolInfo = await market.poolInfo()
+            await market.setPoolInfo({
+                ...poolInfo,
+                baseBalancePerShareX96: baseBalancePerShareX96,
+            })
+        }
     }
 }
