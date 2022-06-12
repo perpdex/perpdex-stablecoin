@@ -21,10 +21,10 @@ describe("PerpdexLongToken base decimals", async () => {
     let alice: Wallet
     let bob: Wallet
 
-    beforeEach(async () => {
+    async function before(decimals: number = 18) {
         fixture = await loadFixture(
             createPerpdexExchangeFixture({
-                wethDecimals: 6,
+                wethDecimals: decimals,
             }),
         )
 
@@ -39,7 +39,10 @@ describe("PerpdexLongToken base decimals", async () => {
         owner = fixture.owner
         alice = fixture.alice
         bob = fixture.bob
-    })
+
+        // alice approve longToken of max assets
+        await weth.connect(alice).approve(longToken.address, ethers.constants.MaxUint256)
+    }
 
     // for assets
     function parseAssets(amount: string) {
@@ -52,123 +55,65 @@ describe("PerpdexLongToken base decimals", async () => {
     }
 
     it("asset", async () => {
+        await before(18)
         expect(await longToken.asset()).to.eq(await exchange.settlementToken())
     })
 
-    describe("totalAssets", async () => {
+    describe("decimals scenario tests", async () => {
         ;[
             {
-                title: "no balance",
-                balance: "0",
-                totalAssets: "0",
-            },
-            {
-                title: "balance 10 WETH",
-                balance: "10",
-                totalAssets: "10",
-            },
-            {
-                title: "balance -10 WETH",
-                balance: "-10",
-                totalAssets: "0",
-            },
-        ].forEach(test => {
-            it(test.title, async () => {
-                // force contract balance to be deposit
-                await exchange.setAccountInfo(
-                    longToken.address,
-                    {
-                        collateralBalance: parseAssets(test.balance),
-                    },
-                    [],
-                )
-                expect(await longToken.totalAssets()).to.eq(parseAssets(test.totalAssets))
-            })
-        })
-    })
-
-    describe("convertToShares", async () => {
-        beforeEach(async () => {
-            // alice approve longToken of max assets
-            await weth.approveForce(alice.address, longToken.address, ethers.constants.MaxUint256)
-        })
-        ;[
-            {
-                title: "totalSupply == 0",
-                pool: {
-                    base: "0",
-                    quote: "0",
-                },
-                depositAssets: "0",
-                convertAssets: "5",
-                expected: "5",
-            },
-            {
-                title: "totalSupply != 0",
+                assetDecimals: 6,
+                title: "account value is zero",
                 pool: {
                     base: "10000",
                     quote: "10000",
                 },
-                depositAssets: "100",
-                convertAssets: "50",
-                expected: "49.014802470346044505",
-            },
-        ].forEach(test => {
-            it(test.title, async () => {
-                await initPool(fixture, parse18(test.pool.base), parse18(test.pool.quote))
+                isMarketAllowed: true,
+                depositAssets: parseUnits("0", 6),
 
-                // alice deposits
-                var depositAssets = parseAssets(test.depositAssets)
-                if (depositAssets.gt(0)) {
-                    await weth.connect(owner).mint(alice.address, depositAssets)
-                    await longToken.connect(alice).deposit(depositAssets, alice.address)
-                }
-                console.log((await longToken.totalAssets()).toString())
-                console.log((await longToken.totalSupply()).toString())
+                // args
+                convertToSharesAssets: 0,
 
-                expect(await longToken.convertToShares(parseAssets(test.convertAssets))).to.eq(parse18(test.expected))
-            })
-        })
-    })
-
-    describe("convertToAssets", async () => {
-        beforeEach(async () => {
-            // alice approve longToken of max assets
-            await weth.approveForce(alice.address, longToken.address, ethers.constants.MaxUint256)
-        })
-        ;[
-            {
-                title: "totalSupply == 0",
-                pool: {
-                    base: "0",
-                    quote: "0",
-                },
-                depositAssets: "0",
-                convertShares: "5",
-                expected: "5",
+                // expected value
+                expectedTotalAssets: 0,
+                expectedConvertToShares: 0,
             },
             {
-                title: "totalSupply != 0",
+                assetDecimals: 6,
+                title: "account value > 0",
                 pool: {
                     base: "10000",
                     quote: "10000",
                 },
-                depositAssets: "100",
-                convertShares: "49.014802470346044505",
-                expected: "49.999999",
+                isMarketAllowed: true,
+                depositAssets: parseUnits("100", 6),
+
+                // args
+                convertToSharesAssets: parseUnits("50", 6),
+
+                // expected value
+                expectedTotalAssets: parseUnits("100.999999", 6),
+                expectedConvertToShares: parseUnits("49.014802955641123273", 18),
             },
         ].forEach(test => {
-            it(test.title, async () => {
+            it(`(assetDecimals == ${test.assetDecimals})\t` + test.title, async () => {
+                await before(test.assetDecimals)
+
                 await initPool(fixture, parse18(test.pool.base), parse18(test.pool.quote))
 
-                // alice deposits
-                var depositAssets = parseAssets(test.depositAssets)
-                if (depositAssets.gt(0)) {
-                    await weth.connect(owner).mint(alice.address, depositAssets)
-                    await longToken.connect(alice).deposit(depositAssets, alice.address)
+                // alice deposit to perpdex
+                if (test.depositAssets.gt(0)) {
+                    // mint balance
+                    await weth.connect(owner).mint(alice.address, test.depositAssets)
+                    await longToken.connect(alice).deposit(test.depositAssets, alice.address)
                 }
 
-                expect(await longToken.convertToAssets(parse18(test.convertShares))).to.eq(parseAssets(test.expected))
+                if (test.isMarketAllowed !== void 0) {
+                    await exchange.connect(owner).setIsMarketAllowed(market.address, test.isMarketAllowed)
+                }
+
+                expect(await longToken.totalAssets()).to.eq(test.expectedTotalAssets)
+                expect(await longToken.convertToShares(test.convertToSharesAssets)).to.eq(test.expectedConvertToShares)
             })
         })
     })

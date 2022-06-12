@@ -31,7 +31,7 @@ abstract contract PerpdexTokenBase is IERC4626, ERC20 {
 
     function totalAssets() public view override returns (uint256 totalManagedAssets) {
         int256 value = IPerpdexExchange(exchange).getTotalAccountValue(address(this));
-        totalManagedAssets = value < 0 ? 0 : uint256(value);
+        totalManagedAssets = value < 0 ? 0 : _convertToAssetDecimals(uint256(value));
     }
 
     function convertToShares(uint256 assets) public view override returns (uint256 shares) {
@@ -39,7 +39,7 @@ abstract contract PerpdexTokenBase is IERC4626, ERC20 {
         if (supply == 0) {
             return FullMath.mulDiv(assets, 10**decimals(), 10**IERC20Metadata(asset).decimals());
         }
-        return FullMath.mulDiv(_convertToPerpdexDecimals(assets), supply, totalAssets());
+        return FullMath.mulDiv(assets, supply, totalAssets());
     }
 
     function convertToAssets(uint256 shares) public view override returns (uint256 assets) {
