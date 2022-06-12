@@ -66,49 +66,66 @@ describe("PerpdexLongToken base decimals", async () => {
             deposit: {
                 assets: parseUnits("100", 6),
                 receiver: "alice",
-            },
+                expects: {
+                    balanceOf: {
+                        owner: "alice",
+                        expected: parseUnits("99.009900990099009900", 18),
+                    },
 
-            balanceOf: {
-                owner: "alice",
-                expected: parseUnits("99.009900990099009900", 18),
-            },
+                    totalSupply: {
+                        expected: parseUnits("99.009900990099009900", 18),
+                    },
 
-            totalSupply: {
-                expected: parseUnits("99.009900990099009900", 18),
-            },
+                    totalAssets: {
+                        expected: parseUnits("100.999999", 6),
+                    },
 
-            totalAssets: {
-                expected: parseUnits("100.999999", 6),
-            },
+                    convertToShares: {
+                        assets: parseUnits("50", 6),
+                        expected: parseUnits("49.014802955641123273", 18),
+                    },
 
-            convertToShares: {
-                assets: parseUnits("50", 6),
-                expected: parseUnits("49.014802955641123273", 18),
-            },
+                    convertToAssets: {
+                        shares: parseUnits("50", 18),
+                        expected: parseUnits("51.004999", 6),
+                    },
 
-            convertToAssets: {
-                shares: parseUnits("50", 18),
-                expected: parseUnits("51.004999", 6),
-            },
+                    previewDeposit: {
+                        assets: parseUnits("50", 6),
+                        expected: parseUnits("48.773350241428083695", 18),
+                    },
 
-            previewDeposit: {
-                assets: parseUnits("50", 6),
-                expected: parseUnits("48.773350241428083695", 18),
-            },
+                    previewMint: {
+                        shares: parseUnits("48.773350241428083695", 18),
+                        expected: parseUnits("50", 6),
+                    },
 
-            previewMint: {
-                shares: parseUnits("48.773350241428083695", 18),
-                expected: parseUnits("50", 6),
-            },
+                    previewWithdraw: {
+                        assets: parseUnits("50", 6),
+                        expected: parseUnits("49.258657209004482538", 18),
+                    },
 
-            previewWithdraw: {
-                assets: parseUnits("50", 6),
-                expected: parseUnits("49.258657209004482538", 18),
-            },
+                    previewRedeem: {
+                        shares: parseUnits("49.258657209004482538", 18),
+                        expected: parseUnits("50", 6),
+                    },
 
-            previewRedeem: {
-                shares: parseUnits("49.258657209004482538", 18),
-                expected: parseUnits("50", 6),
+                    maxDeposit: {
+                        expected: parseUnits("238.613139", 6),
+                    },
+
+                    maxMint: {
+                        expected: parseUnits("249.420273619194367053", 18),
+                    },
+
+                    maxWithdraw: {
+                        expected: parseUnits("257.211406", 6),
+                    },
+
+                    maxRedeem: {
+                        expected: parseUnits("99.009900990099009900", 18),
+                    },
+                },
             },
         },
     ].forEach(test => {
@@ -141,41 +158,63 @@ describe("PerpdexLongToken base decimals", async () => {
             })
 
             it("totalSupply", async () => {
-                expect(await longToken.totalSupply()).to.eq(test.totalSupply.expected)
+                expect(await longToken.totalSupply()).to.eq(test.deposit.expects.totalSupply.expected)
             })
 
             it("totalAssets", async () => {
-                expect(await longToken.totalAssets()).to.eq(test.totalAssets.expected)
+                expect(await longToken.totalAssets()).to.eq(test.deposit.expects.totalAssets.expected)
             })
 
             it("convertToShares", async () => {
-                expect(await longToken.convertToShares(test.convertToShares.assets)).to.eq(
-                    test.convertToShares.expected,
+                expect(await longToken.convertToShares(test.deposit.expects.convertToShares.assets)).to.eq(
+                    test.deposit.expects.convertToShares.expected,
                 )
             })
 
             it("convertToAssets", async () => {
-                expect(await longToken.convertToAssets(test.convertToAssets.shares)).to.eq(
-                    test.convertToAssets.expected,
+                expect(await longToken.convertToAssets(test.deposit.expects.convertToAssets.shares)).to.eq(
+                    test.deposit.expects.convertToAssets.expected,
                 )
             })
 
             it("previewDeposit", async () => {
-                expect(await longToken.previewDeposit(test.previewDeposit.assets)).to.eq(test.previewDeposit.expected)
+                expect(await longToken.previewDeposit(test.deposit.expects.previewDeposit.assets)).to.eq(
+                    test.deposit.expects.previewDeposit.expected,
+                )
             })
 
             it("previewMint", async () => {
-                expect(await longToken.previewMint(test.previewMint.shares)).to.eq(test.previewMint.expected)
+                expect(await longToken.previewMint(test.deposit.expects.previewMint.shares)).to.eq(
+                    test.deposit.expects.previewMint.expected,
+                )
             })
 
             it("previewWithdraw", async () => {
-                expect(await longToken.previewWithdraw(test.previewWithdraw.assets)).to.eq(
-                    test.previewWithdraw.expected,
+                expect(await longToken.previewWithdraw(test.deposit.expects.previewWithdraw.assets)).to.eq(
+                    test.deposit.expects.previewWithdraw.expected,
                 )
             })
 
             it("previewRedeem", async () => {
-                expect(await longToken.previewRedeem(test.previewRedeem.shares)).to.eq(test.previewRedeem.expected)
+                expect(await longToken.previewRedeem(test.deposit.expects.previewRedeem.shares)).to.eq(
+                    test.deposit.expects.previewRedeem.expected,
+                )
+            })
+
+            it("maxDeposit", async () => {
+                expect(await longToken.maxDeposit(alice.address)).to.eq(test.deposit.expects.maxDeposit.expected)
+            })
+
+            it("maxMint", async () => {
+                expect(await longToken.maxMint(alice.address)).to.eq(test.deposit.expects.maxMint.expected)
+            })
+
+            it("maxWithdraw", async () => {
+                expect(await longToken.maxWithdraw(alice.address)).to.eq(test.deposit.expects.maxWithdraw.expected)
+            })
+
+            it("maxRedeem", async () => {
+                expect(await longToken.maxRedeem(alice.address)).to.eq(test.deposit.expects.maxRedeem.expected)
             })
         })
     })
