@@ -94,7 +94,7 @@ describe("PerpdexLongToken withdraw", async () => {
                 },
                 isMarketAllowed: true,
                 depositAssets: "10",
-                expected: "9.980019990000000009",
+                expected: "9.999999999999999999",
             },
         ].forEach(test => {
             it(test.title, async () => {
