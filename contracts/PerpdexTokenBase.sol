@@ -244,8 +244,10 @@ abstract contract PerpdexTokenBase is IERC4626, ReentrancyGuard, ERC20 {
     function _depositToPerpdex(uint256 amount) internal {
         if (weth == address(0)) {
             IERC20(asset).approve(exchange, type(uint256).max);
+            IPerpdexExchange(exchange).deposit(amount);
+        } else {
+            IPerpdexExchange(exchange).deposit{ value: amount }(0);
         }
-        IPerpdexExchange(exchange).deposit(amount);
     }
 
     function _withdrawFromPerpdex(uint256 amount) internal {
