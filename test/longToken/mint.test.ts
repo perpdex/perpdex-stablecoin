@@ -75,7 +75,7 @@ describe("PerpdexLongToken mint", async () => {
         ].forEach(test => {
             it(test.title, async () => {
                 // init pool
-                await initPool(exchange, market, owner, parseShares(test.pool.base), parseAssets(test.pool.quote))
+                await initPool(fixture, parseShares(test.pool.base), parseAssets(test.pool.quote))
 
                 if (test.isMarketAllowed !== void 0) {
                     await exchange.connect(owner).setIsMarketAllowed(market.address, test.isMarketAllowed)
@@ -146,7 +146,7 @@ describe("PerpdexLongToken mint", async () => {
             },
         ].forEach(test => {
             it(test.title, async () => {
-                await initPool(exchange, market, owner, parseShares(test.pool.base), parseAssets(test.pool.quote))
+                await initPool(fixture, parseShares(test.pool.base), parseAssets(test.pool.quote))
 
                 if (test.isMarketAllowed !== void 0) {
                     await exchange.connect(owner).setIsMarketAllowed(market.address, test.isMarketAllowed)
@@ -231,7 +231,7 @@ describe("PerpdexLongToken mint", async () => {
         ].forEach(test => {
             it(test.title, async () => {
                 // pool
-                await initPool(exchange, market, owner, parseShares(test.pool.base), parseAssets(test.pool.quote))
+                await initPool(fixture, parseShares(test.pool.base), parseAssets(test.pool.quote))
 
                 // alice balance
                 await weth.connect(owner).mint(alice.address, parseAssets(test.aliceQuoteAssets))

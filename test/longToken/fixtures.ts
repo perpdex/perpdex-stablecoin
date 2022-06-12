@@ -54,7 +54,10 @@ export function createPerpdexExchangeFixture(
 
         // long token
         const perpdexLongTokenF = await ethers.getContractFactory("PerpdexLongToken")
-        const perpdexLongToken = (await perpdexLongTokenF.deploy(perpdexMarket.address)) as PerpdexLongToken
+        const perpdexLongToken = (await perpdexLongTokenF.deploy(
+            perpdexMarket.address,
+            ethers.constants.AddressZero,
+        )) as PerpdexLongToken
 
         return {
             perpdexExchange,

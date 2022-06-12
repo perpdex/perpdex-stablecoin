@@ -110,7 +110,7 @@ describe("PerpdexLongToken base", async () => {
             },
         ].forEach(test => {
             it(test.title, async () => {
-                await initPool(exchange, market, owner, parseShares(test.pool.base), parseAssets(test.pool.quote))
+                await initPool(fixture, parseShares(test.pool.base), parseAssets(test.pool.quote))
 
                 // alice deposits
                 var depositAssets = parseAssets(test.depositAssets)
@@ -155,7 +155,7 @@ describe("PerpdexLongToken base", async () => {
             },
         ].forEach(test => {
             it(test.title, async () => {
-                await initPool(exchange, market, owner, parseShares(test.pool.base), parseAssets(test.pool.quote))
+                await initPool(fixture, parseShares(test.pool.base), parseAssets(test.pool.quote))
 
                 // alice deposits
                 var depositAssets = parseAssets(test.depositAssets)

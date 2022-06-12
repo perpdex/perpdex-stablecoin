@@ -23,4 +23,14 @@ contract TestERC20 is ERC20PresetMinterPauser {
     ) external {
         _approve(from, to, amount);
     }
+
+    // WETH interface
+
+    function deposit() external payable {
+        _mint(msg.sender, msg.value);
+    }
+
+    function withdraw(uint256 amount) external {
+        _burn(msg.sender, amount);
+    }
 }
