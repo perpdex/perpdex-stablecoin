@@ -7,7 +7,7 @@ import { PerpdexLongToken, TestERC20, TestPerpdexExchange, TestPerpdexMarket } f
 import { createPerpdexExchangeFixture } from "./fixtures"
 import { initPool } from "./helpers"
 
-describe("PerpdexLongToken withdraw", async () => {
+describe("PerpdexLongToken withdraw ETH", async () => {
     let loadFixture = waffle.createFixtureLoader(waffle.provider.getWallets())
     let fixture
 
