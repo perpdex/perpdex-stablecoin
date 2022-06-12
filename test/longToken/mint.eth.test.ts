@@ -92,18 +92,18 @@ describe("PerpdexLongToken mint", async () => {
                 sendETHValue: "110",
                 revertedWith: "PM_PS: too large amount",
             },
-            // unnecessary?
-            // {
-            //     title: "reverts when send ETH value is lower than previewMint",
-            //     pool: {
-            //         base: "10000",
-            //         quote: "10000",
-            //     },
-            //     aliceQuoteAssets: "50",
-            //     mintShares: "20",
-            //     sendETHValue: "10",
-            //     revertedWith: "SafeMath: subtraction overflow",
-            // },
+            {
+                title: "reverts when send ETH value is lower than previewMint",
+                pool: {
+                    base: "10000",
+                    quote: "10000",
+                },
+                aliceQuoteAssets: "50",
+                mintShares: "20",
+                sendETHValue: "10",
+                revertedWith: "SafeMath: subtraction overflow",
+                skipPreviewSubjectRevertAssert: true,
+            },
             {
                 title: "succeeds",
                 pool: {
@@ -133,7 +133,9 @@ describe("PerpdexLongToken mint", async () => {
 
                 // assert
                 if (test.revertedWith !== void 0) {
-                    await expect(previewSubject).to.reverted
+                    if (!test.skipPreviewSubjectRevertAssert) {
+                        await expect(previewSubject).to.reverted
+                    }
                     await expect(mintSubject).to.revertedWith(test.revertedWith)
                 } else {
                     var depositedAssets = parseUnits(test.depositedAssets, 18)
