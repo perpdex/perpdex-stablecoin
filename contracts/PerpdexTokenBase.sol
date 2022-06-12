@@ -22,6 +22,9 @@ abstract contract PerpdexTokenBase is IERC4626, ReentrancyGuard, ERC20 {
     address public immutable market;
     address public immutable exchange;
     address public immutable weth;
+    string private _name;
+    string private _symbol;
+    uint8 private _decimals;
 
     modifier onlyWeth() {
         require(weth != address(0), "PTB_OW: weth is not available");
@@ -33,7 +36,7 @@ abstract contract PerpdexTokenBase is IERC4626, ReentrancyGuard, ERC20 {
         string memory namePrefix,
         string memory symbolPrefix,
         address wethArg
-    ) ERC20(_getERC20Name(marketArg, namePrefix), _getERC20Symbol(marketArg, symbolPrefix)) {
+    ) {
         address exchangeVar = IPerpdexMarket(marketArg).exchange();
         address settlementToken = IPerpdexExchange(exchangeVar).settlementToken();
         address assetVar;
@@ -50,6 +53,11 @@ abstract contract PerpdexTokenBase is IERC4626, ReentrancyGuard, ERC20 {
         market = marketArg;
         weth = wethArg;
         exchange = exchangeVar;
+
+        // ERC20
+        _name = _getERC20Name(marketArg, assetVar, namePrefix);
+        _symbol = _getERC20Symbol(marketArg, assetVar, symbolPrefix);
+        _decimals = 18;
     }
 
     // make ERC20 external functions non reentrant
@@ -260,25 +268,23 @@ abstract contract PerpdexTokenBase is IERC4626, ReentrancyGuard, ERC20 {
         }
     }
 
-    function _getERC20Name(address marketArg, string memory namePrefix) private view returns (string memory) {
+    function _getERC20Name(
+        address marketArg,
+        address assetVar,
+        string memory namePrefix
+    ) private view returns (string memory) {
         return
-            string(
-                abi.encodePacked(
-                    namePrefix,
-                    IPerpdexMarket(marketArg).symbol(),
-                    IERC20Metadata(IPerpdexExchange(IPerpdexMarket(marketArg).exchange()).settlementToken()).symbol()
-                )
-            );
+            string(abi.encodePacked(namePrefix, IPerpdexMarket(marketArg).symbol(), IERC20Metadata(assetVar).symbol()));
     }
 
-    function _getERC20Symbol(address marketArg, string memory symbolPrefix) private view returns (string memory) {
+    function _getERC20Symbol(
+        address marketArg,
+        address assetVar,
+        string memory symbolPrefix
+    ) private view returns (string memory) {
         return
             string(
-                abi.encodePacked(
-                    symbolPrefix,
-                    IPerpdexMarket(marketArg).symbol(),
-                    IERC20Metadata(IPerpdexExchange(IPerpdexMarket(marketArg).exchange()).settlementToken()).symbol()
-                )
+                abi.encodePacked(symbolPrefix, IPerpdexMarket(marketArg).symbol(), IERC20Metadata(assetVar).symbol())
             );
     }
 
