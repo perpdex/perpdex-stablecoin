@@ -116,15 +116,15 @@ contract PerpdexLongToken is PerpdexTokenBase {
     }
 
     function maxDeposit(address) public view override returns (uint256 maxAssets) {
-        return _maxTrade(false, true);
-    }
-
-    function maxMint(address) public view override returns (uint256 maxShares) {
         return _maxTrade(false, false);
     }
 
+    function maxMint(address) public view override returns (uint256 maxShares) {
+        return _maxTrade(false, true);
+    }
+
     function maxWithdraw(address owner) public view override returns (uint256 maxAssets) {
-        maxAssets = _maxTrade(true, false);
+        maxAssets = _maxTrade(true, true);
         (bool success, uint256 previewAssets) = _tryPreviewTrade(true, false, balanceOf(owner));
         if (success) {
             maxAssets = Math.min(maxAssets, previewAssets);
@@ -132,7 +132,7 @@ contract PerpdexLongToken is PerpdexTokenBase {
     }
 
     function maxRedeem(address owner) public view override returns (uint256 maxShares) {
-        return Math.min(balanceOf(owner), _maxTrade(true, true));
+        return Math.min(balanceOf(owner), _maxTrade(true, false));
     }
 
     function _doWithdraw(
