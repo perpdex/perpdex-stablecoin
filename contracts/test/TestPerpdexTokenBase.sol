@@ -53,4 +53,8 @@ contract TestPerpdexTokenBase is PerpdexTokenBase {
     ) external {
         _spendAllowance(owner, spender, amount);
     }
+
+    function testMint(address receiver, uint256 shares) external {
+        _mint(receiver, shares);
+    }
 }
