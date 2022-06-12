@@ -42,7 +42,9 @@ export function createPerpdexExchangeFixture(
             wethAddress = weth.address
             naitiveTokenSymbol = "ETH"
 
-            await weth.connect(owner).deposit({ value: ethers.utils.parseEther("10") })
+            await weth.connect(owner).deposit({
+                value: ethers.utils.parseEther("200"),
+            })
         }
 
         let baseDecimals = 18
