@@ -84,8 +84,12 @@ describe("PerpdexLongToken base decimals", async () => {
 
             previewDeposit: {
                 assets: parseUnits("50", 6),
-                receiver: "alice",
-                expected: parseUnits("50", 18),
+                expected: parseUnits("48.773350241428083695", 18),
+            },
+
+            previewMint: {
+                shares: parseUnits("48.773350241428083695", 18),
+                expected: parseUnits("50", 6),
             },
         },
     ].forEach(test => {
@@ -128,6 +132,14 @@ describe("PerpdexLongToken base decimals", async () => {
                 expect(await longToken.convertToAssets(test.convertToAssets.shares)).to.eq(
                     test.convertToAssets.expected,
                 )
+            })
+
+            it("previewDeposit", async () => {
+                expect(await longToken.previewDeposit(test.previewDeposit.assets)).to.eq(test.previewDeposit.expected)
+            })
+
+            it("previewMint", async () => {
+                expect(await longToken.previewMint(test.previewMint.shares)).to.eq(test.previewMint.expected)
             })
         })
     })
