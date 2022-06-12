@@ -68,6 +68,10 @@ describe("PerpdexLongToken redeem", async () => {
                 alice = fixture.alice
                 bob = fixture.bob
                 charlie = fixture.charlie
+
+                await weth.connect(owner).deposit({
+                    value: ethers.utils.parseEther("200"),
+                })
             })
 
             describe("maxRedeem", async () => {
