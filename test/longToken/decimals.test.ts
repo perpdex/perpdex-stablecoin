@@ -28,10 +28,10 @@ describe("PerpdexLongToken base decimals", async () => {
         }
     }
 
-    async function setupEnvironment(decimals: number, poolBase: string, poolQuote: string) {
+    async function setupEnvironment(assetDecimals: number, quoteDecimals: number, poolBase: string, poolQuote: string) {
         fixture = await loadFixture(
             createPerpdexExchangeFixture({
-                wethDecimals: decimals,
+                wethDecimals: assetDecimals,
             }),
         )
 
@@ -49,12 +49,7 @@ describe("PerpdexLongToken base decimals", async () => {
         await weth.connect(alice).approve(longToken.address, ethers.constants.MaxUint256)
 
         // init pool
-        await initPool(fixture, parse18(poolBase), parse18(poolQuote))
-    }
-
-    // for shares, perpdex base and quote
-    function parse18(amount: string) {
-        return parseUnits(amount, 18)
+        await initPool(fixture, parseUnits(poolBase, quoteDecimals), parseUnits(poolQuote, quoteDecimals))
     }
 
     ;[
@@ -123,7 +118,7 @@ describe("PerpdexLongToken base decimals", async () => {
     ].forEach(test => {
         describe(`assetDecimals == ${test.assetDecimals}\t`, async () => {
             beforeEach(async () => {
-                await setupEnvironment(test.assetDecimals, test.pool.base, test.pool.quote)
+                await setupEnvironment(test.assetDecimals, test.quoteDecimals, test.pool.base, test.pool.quote)
             })
 
             async function doDeposit() {
