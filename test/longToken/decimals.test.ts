@@ -115,6 +115,68 @@ describe("PerpdexLongToken base decimals", async () => {
                 },
             },
         },
+        {
+            assetDecimals: 6,
+            quoteDecimals: 18,
+            pool: {
+                base: "10000",
+                quote: "40000",
+            },
+            isMarketAllowed: true,
+
+            deposit: {
+                assets: parseUnits("100", 6),
+                receiver: "alice",
+                expects: {
+                    balanceOf: {
+                        owner: "alice",
+                    },
+
+                    totalSupply: {},
+                    totalAssets: {},
+
+                    convertToShares: {
+                        assets: parseUnits("50", 6),
+                    },
+
+                    convertToAssets: {
+                        shares: parseUnits("50", 18),
+                    },
+
+                    previewDeposit: {
+                        assets: parseUnits("50", 6),
+                    },
+
+                    previewMint: {
+                        shares: parseUnits("48.773350241428083695", 18),
+                    },
+
+                    previewWithdraw: {
+                        assets: parseUnits("50", 6),
+                    },
+
+                    previewRedeem: {
+                        shares: parseUnits("49.258657209004482538", 18),
+                    },
+
+                    maxDeposit: {
+                        expected: parseUnits("238.613139", 6),
+                    },
+
+                    maxMint: {
+                        expected: parseUnits("249.420273619194367053", 18),
+                    },
+
+                    maxWithdraw: {
+                        expected: parseUnits("257.211406", 6),
+                    },
+
+                    maxRedeem: {
+                        expected: parseUnits("99.009900990099009900", 18),
+                    },
+                },
+            },
+        },
     ].forEach(test => {
         describe(`assetDecimals == ${test.assetDecimals}\t`, async () => {
             beforeEach(async () => {
