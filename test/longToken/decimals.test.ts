@@ -200,7 +200,7 @@ describe("PerpdexLongToken decimals", async () => {
             },
         },
     ].forEach(test => {
-        describe(`assetDecimals == ${test.assetDecimals}\t`, async () => {
+        describe(`settlementToken == ${test.settlementToken}, assetDecimals == ${test.assetDecimals}\t`, async () => {
             beforeEach(async () => {
                 await setupEnvironment(
                     test.settlementToken,
