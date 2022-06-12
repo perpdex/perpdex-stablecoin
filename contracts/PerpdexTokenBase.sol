@@ -26,6 +26,8 @@ abstract contract PerpdexTokenBase is IERC4626, ReentrancyGuard, ERC20 {
     string private _symbol;
     uint8 private _decimals;
 
+    uint8 private constant DECIMALS = 18;
+
     modifier onlyWeth() {
         require(weth != address(0), "PTB_OW: weth is not available");
         _;
@@ -40,6 +42,8 @@ abstract contract PerpdexTokenBase is IERC4626, ReentrancyGuard, ERC20 {
         address exchangeVar = IPerpdexMarket(marketArg).exchange();
         address settlementToken = IPerpdexExchange(exchangeVar).settlementToken();
         address assetVar;
+
+        require(IPerpdexExchange(exchangeVar).quoteDecimals() == DECIMALS, "PTB_C: invalid decimals");
 
         if (settlementToken == address(0)) {
             require(wethArg != address(0), "PTB_C: weth is required");
@@ -96,8 +100,12 @@ abstract contract PerpdexTokenBase is IERC4626, ReentrancyGuard, ERC20 {
     function convertToShares(uint256 assets) public view override returns (uint256 shares) {
         uint256 supply = totalSupply();
         if (supply == 0) {
-            shares = FullMath.mulDiv(assets, 10**decimals(), 10**IERC20Metadata(asset).decimals());
-            return FullMath.mulDiv(shares, FixedPoint96.Q96, IPerpdexMarket(market).getShareMarkPriceX96());
+            return
+                FullMath.mulDiv(
+                    _convertToPerpdexDecimals(assets),
+                    FixedPoint96.Q96,
+                    IPerpdexMarket(market).getShareMarkPriceX96()
+                );
         }
         return FullMath.mulDiv(assets, supply, totalAssets());
     }
@@ -105,28 +113,22 @@ abstract contract PerpdexTokenBase is IERC4626, ReentrancyGuard, ERC20 {
     function convertToAssets(uint256 shares) public view override returns (uint256 assets) {
         uint256 supply = totalSupply();
         if (supply == 0) {
-            assets = FullMath.mulDiv(shares, 10**IERC20Metadata(asset).decimals(), 10**decimals());
-            return FullMath.mulDiv(assets, IPerpdexMarket(market).getMarkPriceX96(), FixedPoint96.Q96);
+            return
+                FullMath.mulDiv(
+                    _convertToAssetDecimals(shares),
+                    IPerpdexMarket(market).getMarkPriceX96(),
+                    FixedPoint96.Q96
+                );
         }
         return FullMath.mulDiv(shares, totalAssets(), supply);
     }
 
     function _convertToPerpdexDecimals(uint256 amount) internal view returns (uint256 assets) {
-        return
-            FullMath.mulDiv(
-                amount,
-                10**IPerpdexExchange(exchange).quoteDecimals(),
-                10**IERC20Metadata(asset).decimals()
-            );
+        return FullMath.mulDiv(amount, 10**DECIMALS, 10**IERC20Metadata(asset).decimals());
     }
 
     function _convertToAssetDecimals(uint256 amount) internal view returns (uint256 assets) {
-        return
-            FullMath.mulDiv(
-                amount,
-                10**IERC20Metadata(asset).decimals(),
-                10**IPerpdexExchange(exchange).quoteDecimals()
-            );
+        return FullMath.mulDiv(amount, 10**IERC20Metadata(asset).decimals(), 10**DECIMALS);
     }
 
     function _beforeTrade(
