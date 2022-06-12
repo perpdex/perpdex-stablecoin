@@ -135,7 +135,6 @@ describe("PerpdexLongToken base decimals", async () => {
         beforeEach(async () => {
             // alice approve longToken of max assets
             await weth.approveForce(alice.address, longToken.address, ethers.constants.MaxUint256)
-            await weth.approveForce(longToken.address, exchange.address, ethers.constants.MaxUint256)
         })
         ;[
             {
@@ -156,11 +155,11 @@ describe("PerpdexLongToken base decimals", async () => {
                 },
                 depositAssets: "100",
                 convertShares: "49.014802470346044505",
-                expected: "49.999999999999999999",
+                expected: "49.999999",
             },
         ].forEach(test => {
             it(test.title, async () => {
-                await initPool(exchange, market, owner, parseShares(test.pool.base), parseAssets(test.pool.quote))
+                await initPool(fixture, parse18(test.pool.base), parse18(test.pool.quote))
 
                 // alice deposits
                 var depositAssets = parseAssets(test.depositAssets)
@@ -169,9 +168,7 @@ describe("PerpdexLongToken base decimals", async () => {
                     await longToken.connect(alice).deposit(depositAssets, alice.address)
                 }
 
-                expect(await longToken.convertToAssets(parseShares(test.convertShares))).to.eq(
-                    parseAssets(test.expected),
-                )
+                expect(await longToken.convertToAssets(parse18(test.convertShares))).to.eq(parseAssets(test.expected))
             })
         })
     })
