@@ -182,7 +182,7 @@ abstract contract PerpdexTokenBase is IERC4626, ERC20 {
 
     function _depositToPerpdex(uint256 amount) internal {
         IERC20(asset).approve(exchange, type(uint256).max);
-        IPerpdexExchange(exchange).deposit(_convertToPerpdexDecimals(amount));
+        IPerpdexExchange(exchange).deposit(amount);
     }
 
     function _assetSafeTransfer(address to, uint256 amount) internal {
