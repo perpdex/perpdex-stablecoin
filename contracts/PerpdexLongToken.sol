@@ -125,7 +125,7 @@ contract PerpdexLongToken is PerpdexTokenBase {
 
     function maxWithdraw(address owner) public view override returns (uint256 maxAssets) {
         maxAssets = _maxTrade(true, true);
-        (bool success, uint256 previewAssets) = _tryPreviewTrade(true, false, balanceOf(owner));
+        (bool success, uint256 previewAssets) = _tryPreviewTrade(true, true, balanceOf(owner));
         if (success) {
             maxAssets = Math.min(maxAssets, previewAssets);
         }

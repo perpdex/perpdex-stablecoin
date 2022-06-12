@@ -251,7 +251,6 @@ describe("PerpdexLongToken base decimals", async () => {
                 expect(num).to.within(refNum * 0.01, refNum * 0.05)
             })
 
-            /*
             it("maxWithdraw", async () => {
                 await doDeposit()
                 var refVal = await longToken.totalAssets()
@@ -263,6 +262,7 @@ describe("PerpdexLongToken base decimals", async () => {
                 expect(num).to.within(refNum * 0.95, refNum * 1.05)
             })
 
+            /*
             it("maxRedeem", async () => {
                 await doDeposit()
                 expect(await longToken.maxRedeem(alice.address)).to.eq(test.deposit.expects.maxRedeem.expected)
