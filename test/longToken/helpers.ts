@@ -2,7 +2,7 @@
 import { BigNumber } from "ethers"
 import { ethers } from "hardhat"
 
-export async function initPool(fixture, base, quote): Promise<void> {
+export async function initPool(fixture, base, quote, baseBalancePerShareX96 = void 0): Promise<void> {
     let exchange = fixture.perpdexExchange
     let market = fixture.perpdexMarket
     let owner = fixture.owner
@@ -31,5 +31,12 @@ export async function initPool(fixture, base, quote): Promise<void> {
             minQuote: 0,
             deadline: ethers.constants.MaxUint256,
         })
+        if (baseBalancePerShareX96) {
+            const poolInfo = await market.poolInfo()
+            await market.setPoolInfo({
+                ...poolInfo,
+                baseBalancePerShareX96: baseBalancePerShareX96,
+            })
+        }
     }
 }

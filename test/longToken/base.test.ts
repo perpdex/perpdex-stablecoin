@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 import { expect } from "chai"
-import { Wallet } from "ethers"
+import { BigNumber, Wallet } from "ethers"
 import { parseUnits } from "ethers/lib/utils"
 import { ethers, waffle } from "hardhat"
 import { PerpdexLongToken, TestERC20, TestPerpdexExchange, TestPerpdexMarket } from "../../typechain"
@@ -20,6 +20,8 @@ describe("PerpdexLongToken base", async () => {
     let owner: Wallet
     let alice: Wallet
     let bob: Wallet
+
+    const Q96 = BigNumber.from(2).pow(96)
 
     beforeEach(async () => {
         fixture = await loadFixture(createPerpdexExchangeFixture())
@@ -108,6 +110,17 @@ describe("PerpdexLongToken base", async () => {
                 expected: "5",
             },
             {
+                title: "totalSupply == 0 and pool has liquidity and base rebased",
+                pool: {
+                    base: "10000",
+                    quote: "10000",
+                    baseBalancePerShareX96: Q96.mul(2),
+                },
+                depositAssets: "0",
+                convertAssets: "5",
+                expected: "5",
+            },
+            {
                 title: "totalSupply == 0 and pool is unbalanced",
                 pool: {
                     base: "10000",
@@ -129,7 +142,12 @@ describe("PerpdexLongToken base", async () => {
             },
         ].forEach(test => {
             it(test.title, async () => {
-                await initPool(fixture, parseShares(test.pool.base), parseShares(test.pool.quote))
+                await initPool(
+                    fixture,
+                    parseShares(test.pool.base),
+                    parseShares(test.pool.quote),
+                    test.pool.baseBalancePerShareX96,
+                )
 
                 // alice deposits
                 var depositAssets = parseAssets(test.depositAssets)
@@ -176,6 +194,17 @@ describe("PerpdexLongToken base", async () => {
                 expected: "5",
             },
             {
+                title: "totalSupply == 0 and pool has liquidity and base rebased",
+                pool: {
+                    base: "10000",
+                    quote: "10000",
+                    baseBalancePerShareX96: Q96.mul(2),
+                },
+                depositAssets: "0",
+                convertShares: "5",
+                expected: "5",
+            },
+            {
                 title: "totalSupply == 0 and pool is unbalanced",
                 pool: {
                     base: "10000",
@@ -197,7 +226,12 @@ describe("PerpdexLongToken base", async () => {
             },
         ].forEach(test => {
             it(test.title, async () => {
-                await initPool(fixture, parseShares(test.pool.base), parseShares(test.pool.quote))
+                await initPool(
+                    fixture,
+                    parseShares(test.pool.base),
+                    parseShares(test.pool.quote),
+                    test.pool.baseBalancePerShareX96,
+                )
 
                 // alice deposits
                 var depositAssets = parseAssets(test.depositAssets)

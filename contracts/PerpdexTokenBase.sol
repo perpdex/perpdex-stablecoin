@@ -114,7 +114,7 @@ abstract contract PerpdexTokenBase is IERC4626, ReentrancyGuard, ERC20 {
             return
                 FullMath.mulDiv(
                     _convertToAssetDecimals(shares),
-                    IPerpdexMarket(market).getMarkPriceX96(),
+                    IPerpdexMarket(market).getShareMarkPriceX96(),
                     FixedPoint96.Q96
                 );
         }
