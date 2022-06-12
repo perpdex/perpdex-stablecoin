@@ -125,15 +125,15 @@ describe("PerpdexLongToken redeem", async () => {
                         await exchange.connect(owner).setIsMarketAllowed(market.address, test.isMarketAllowed)
 
                         // alice deposits
-                        await weth.connect(owner).mint(alice.address, parseAssets(test.depositAssets))
-
                         // deposit only when market is allowed and pool has liquidity
-                        var depositAssets = parseAssets(test.depositAssets)
                         if (test.isMarketAllowed && test.pool.base !== "0" && test.depositAssets !== "0") {
-                            if (fixtureParams.settlementToken == "ETH") {
-                                await longToken.connect(alice).depositETH(alice.address, { value: depositAssets })
+                            var depositAssets = parseAssets(test.depositAssets)
+                            var owner_ = alice
+                            if (fixtureParams.settlementToken === "ETH") {
+                                await longToken.connect(owner_).depositETH(owner_.address, { value: depositAssets })
                             } else {
-                                await longToken.connect(alice).deposit(parseAssets(test.depositAssets), alice.address)
+                                await weth.connect(owner).mint(alice.address, parseAssets(test.depositAssets))
+                                await longToken.connect(owner_).deposit(parseAssets(test.depositAssets), owner_.address)
                             }
                         }
 
@@ -145,7 +145,7 @@ describe("PerpdexLongToken redeem", async () => {
                 })
             })
 
-            describe("previewRedeem and redeem", async () => {
+            describe("previewRedeem and (redeem or redeemETH)", async () => {
                 beforeEach(async () => {
                     // alice approve longToken of max assets
                     await weth.approveForce(alice.address, longToken.address, ethers.constants.MaxUint256)
@@ -277,7 +277,7 @@ describe("PerpdexLongToken redeem", async () => {
                         // owner_ deposit
                         var depositAssets = parseAssets(test.depositAssets)
                         await weth.connect(owner).mint(owner_.address, depositAssets)
-                        if (fixtureParams.settlementToken == "ETH") {
+                        if (fixtureParams.settlementToken === "ETH") {
                             await longToken.connect(owner_).depositETH(owner_.address, { value: depositAssets })
                         } else {
                             await longToken.connect(owner_).deposit(parseAssets(test.depositAssets), owner_.address)
@@ -300,9 +300,15 @@ describe("PerpdexLongToken redeem", async () => {
                         // caller previews and redeems
                         var redeemShares = parseShares(test.redeemShares)
                         var previewSubject = longToken.connect(caller).previewRedeem(redeemShares)
-                        var redeemSubject = longToken
-                            .connect(caller)
-                            .redeem(redeemShares, receiver.address, owner_.address)
+                        if (fixtureParams.settlementToken === "ETH") {
+                            var redeemSubject = longToken
+                                .connect(caller)
+                                .redeemETH(redeemShares, receiver.address, owner_.address)
+                        } else {
+                            var redeemSubject = longToken
+                                .connect(caller)
+                                .redeem(redeemShares, receiver.address, owner_.address)
+                        }
 
                         // assert
                         if (test.revertedWith !== void 0) {
