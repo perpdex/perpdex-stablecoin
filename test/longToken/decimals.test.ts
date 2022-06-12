@@ -97,21 +97,13 @@ describe("PerpdexLongToken base decimals", async () => {
                         shares: parseUnits("49.258657209004482538", 18),
                     },
 
-                    maxDeposit: {
-                        expected: parseUnits("238.613139", 6),
-                    },
+                    maxDeposit: {},
 
-                    maxMint: {
-                        expected: parseUnits("249.420273619194367053", 18),
-                    },
+                    maxMint: {},
 
-                    maxWithdraw: {
-                        expected: parseUnits("257.211406", 6),
-                    },
+                    maxWithdraw: {},
 
-                    maxRedeem: {
-                        expected: parseUnits("99.009900990099009900", 18),
-                    },
+                    maxRedeem: {},
                 },
             },
         },
@@ -159,21 +151,13 @@ describe("PerpdexLongToken base decimals", async () => {
                         shares: parseUnits("49.258657209004482538", 18),
                     },
 
-                    maxDeposit: {
-                        expected: parseUnits("238.613139", 6),
-                    },
+                    maxDeposit: {},
 
-                    maxMint: {
-                        expected: parseUnits("249.420273619194367053", 18),
-                    },
+                    maxMint: {},
 
-                    maxWithdraw: {
-                        expected: parseUnits("257.211406", 6),
-                    },
+                    maxWithdraw: {},
 
-                    maxRedeem: {
-                        expected: parseUnits("99.009900990099009900", 18),
-                    },
+                    maxRedeem: {},
                 },
             },
         },
