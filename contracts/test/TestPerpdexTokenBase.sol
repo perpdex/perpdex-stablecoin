@@ -9,8 +9,9 @@ contract TestPerpdexTokenBase is PerpdexTokenBase {
     constructor(
         address marketArg,
         string memory namePrefix,
-        string memory symbolPrefix
-    ) PerpdexTokenBase(marketArg, namePrefix, symbolPrefix) {}
+        string memory symbolPrefix,
+        address wethArg
+    ) PerpdexTokenBase(marketArg, namePrefix, symbolPrefix, wethArg) {}
 
     function previewDeposit(uint256 assets) external view override returns (uint256 shares) {}
 
