@@ -109,7 +109,7 @@ describe("PerpdexLongToken redeem", async () => {
         ].forEach(test => {
             it(test.title, async () => {
                 // init pool
-                await initPool(fixture, parseShares(test.pool.base), parseAssets(test.pool.quote))
+                await initPool(fixture, parseShares(test.pool.base), parseShares(test.pool.quote))
 
                 await exchange.connect(owner).setIsMarketAllowed(market.address, test.isMarketAllowed)
 
@@ -250,7 +250,7 @@ describe("PerpdexLongToken redeem", async () => {
         ].forEach(test => {
             it(test.title, async () => {
                 // pool
-                await initPool(fixture, parseShares(test.pool.base), parseAssets(test.pool.quote))
+                await initPool(fixture, parseShares(test.pool.base), parseShares(test.pool.quote))
 
                 var caller = toWallet(test.caller)
                 var owner_ = toWallet(test.owner)
