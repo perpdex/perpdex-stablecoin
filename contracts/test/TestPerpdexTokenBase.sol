@@ -11,7 +11,7 @@ contract TestPerpdexTokenBase is PerpdexTokenBase {
         string memory namePrefix,
         string memory symbolPrefix,
         address wethArg
-    ) PerpdexTokenBase(marketArg, namePrefix, symbolPrefix, wethArg) {}
+    ) PerpdexTokenBase(marketArg, namePrefix, symbolPrefix, "ETH", wethArg) {}
 
     function previewDeposit(uint256 assets) external view override returns (uint256 shares) {}
 

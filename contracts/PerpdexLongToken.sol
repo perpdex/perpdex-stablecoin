@@ -14,7 +14,11 @@ contract PerpdexLongToken is PerpdexTokenBase {
     using SafeCast for int256;
     using SafeMath for uint256;
 
-    constructor(address marketArg, address wethArg) PerpdexTokenBase(marketArg, "PerpDEX Long ", "pl", wethArg) {}
+    constructor(
+        address marketArg,
+        address wethArg,
+        string memory nativeTokenSymbol
+    ) PerpdexTokenBase(marketArg, "PerpDEX Long ", "pl", nativeTokenSymbol, wethArg) {}
 
     function depositETH(address receiver) external payable onlyWeth nonReentrant returns (uint256) {
         return _doDeposit(msg.value, receiver);
