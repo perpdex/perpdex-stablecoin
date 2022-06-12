@@ -19,21 +19,31 @@ export interface PerpdexExchangeFixture {
 }
 
 interface FixtureParams {
+    settlementToken: string
     wethDecimals: number
 }
 
 export function createPerpdexExchangeFixture(
-    params: FixtureParams = { wethDecimals: 18 },
+    params: FixtureParams = { settlementToken: "weth", wethDecimals: 18 },
 ): (wallets, provider) => Promise<PerpdexExchangeFixture> {
     return async ([owner, alice, bob, charlie], provider): Promise<PerpdexExchangeFixture> => {
         const tokenFactory = await ethers.getContractFactory("TestERC20")
         let weth = (await tokenFactory.deploy("TestWETH", "WETH", params.wethDecimals)) as TestERC20
-        let settlementToken = weth
+        let settlementTokenAddress
+        let wethAddress
+        if (params.settlementToken === "weth") {
+            settlementTokenAddress = weth.address
+            wethAddress = ethers.constants.AddressZero
+        } else if (params.settlementToken === "ETH") {
+            settlementTokenAddress = ethers.constants.AddressZero
+            wethAddress = weth.address
+        }
+
         let baseDecimals = 18
 
         // exchange
         const perpdexExchangeFactory = await ethers.getContractFactory("TestPerpdexExchange")
-        const perpdexExchange = (await perpdexExchangeFactory.deploy(settlementToken.address)) as TestPerpdexExchange
+        const perpdexExchange = (await perpdexExchangeFactory.deploy(settlementTokenAddress)) as TestPerpdexExchange
 
         // base priceFeed
         const priceFeedBase = await waffle.deployMockContract(owner, IPerpdexPriceFeedJson.abi)
@@ -56,7 +66,7 @@ export function createPerpdexExchangeFixture(
         const perpdexLongTokenF = await ethers.getContractFactory("PerpdexLongToken")
         const perpdexLongToken = (await perpdexLongTokenF.deploy(
             perpdexMarket.address,
-            ethers.constants.AddressZero,
+            wethAddress,
         )) as PerpdexLongToken
 
         return {
