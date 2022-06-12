@@ -262,12 +262,16 @@ describe("PerpdexLongToken base decimals", async () => {
                 expect(num).to.within(refNum * 0.95, refNum * 1.05)
             })
 
-            /*
             it("maxRedeem", async () => {
                 await doDeposit()
-                expect(await longToken.maxRedeem(alice.address)).to.eq(test.deposit.expects.maxRedeem.expected)
+                var refVal = await longToken.totalSupply()
+                var val = await longToken.maxRedeem(alice.address)
+
+                var refNum = toNumber(refVal, test.quoteDecimals)
+                var num = toNumber(val, test.quoteDecimals)
+
+                expect(num).to.within(refNum * 0.95, refNum * 1.05)
             })
-            */
         })
     })
 })
