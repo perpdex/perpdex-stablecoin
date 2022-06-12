@@ -54,34 +54,43 @@ describe("PerpdexLongToken base decimals", async () => {
         return parseUnits(amount, 18)
     }
 
-    it("asset", async () => {
-        await before(18)
-        expect(await longToken.asset()).to.eq(await exchange.settlementToken())
-    })
-
-    describe("decimals scenario tests", async () => {
-        ;[
-            {
-                assetDecimals: 6,
-                pool: {
-                    base: "10000",
-                    quote: "10000",
-                },
-                isMarketAllowed: true,
-                depositAssets: parseUnits("100", 6),
-
-                // args
-                convertToSharesAssetsArg: parseUnits("50", 6),
-                convertToAssetsSharesArg: parseUnits("50", 18),
-
-                // expected value
-                expectedTotalSupply: parseUnits("99.009900990099009900", 18),
-                expectedTotalAssets: parseUnits("100.999999", 6),
-                expectedConvertToShares: parseUnits("49.014802955641123273", 18),
-                expectedConvertToAssets: parseUnits("51.004999", 6),
+    ;[
+        {
+            assetDecimals: 6,
+            pool: {
+                base: "10000",
+                quote: "10000",
             },
-        ].forEach(test => {
-            it(`assetDecimals == ${test.assetDecimals}\t`, async () => {
+            isMarketAllowed: true,
+            depositAssets: parseUnits("100", 6),
+
+            totalSupply: {
+                expected: parseUnits("99.009900990099009900", 18),
+            },
+
+            totalAssets: {
+                expected: parseUnits("100.999999", 6),
+            },
+
+            convertToShares: {
+                assets: parseUnits("50", 6),
+                expected: parseUnits("49.014802955641123273", 18),
+            },
+
+            convertToAssets: {
+                shares: parseUnits("50", 18),
+                expected: parseUnits("51.004999", 6),
+            },
+
+            previewDeposit: {
+                assets: parseUnits("50", 6),
+                receiver: "alice",
+                expected: parseUnits("50", 18),
+            },
+        },
+    ].forEach(test => {
+        describe(`assetDecimals == ${test.assetDecimals}\t`, async () => {
+            beforeEach(async () => {
                 await before(test.assetDecimals)
 
                 await initPool(fixture, parse18(test.pool.base), parse18(test.pool.quote))
@@ -93,17 +102,31 @@ describe("PerpdexLongToken base decimals", async () => {
                     await longToken.connect(alice).deposit(test.depositAssets, alice.address)
                 }
 
-                if (test.isMarketAllowed !== void 0) {
-                    await exchange.connect(owner).setIsMarketAllowed(market.address, test.isMarketAllowed)
-                }
+                // change market allowance
+                await exchange.connect(owner).setIsMarketAllowed(market.address, test.isMarketAllowed)
+            })
 
-                expect(await longToken.totalSupply()).to.eq(test.expectedTotalSupply)
-                expect(await longToken.totalAssets()).to.eq(test.expectedTotalAssets)
-                expect(await longToken.convertToShares(test.convertToSharesAssetsArg)).to.eq(
-                    test.expectedConvertToShares,
+            it("asset", async () => {
+                expect(await longToken.asset()).to.eq(await exchange.settlementToken())
+            })
+
+            it("totalSupply", async () => {
+                expect(await longToken.totalSupply()).to.eq(test.totalSupply.expected)
+            })
+
+            it("totalAssets", async () => {
+                expect(await longToken.totalAssets()).to.eq(test.totalAssets.expected)
+            })
+
+            it("convertToShares", async () => {
+                expect(await longToken.convertToShares(test.convertToShares.assets)).to.eq(
+                    test.convertToShares.expected,
                 )
-                expect(await longToken.convertToAssets(test.convertToAssetsSharesArg)).to.eq(
-                    test.expectedConvertToAssets,
+            })
+
+            it("convertToAssets", async () => {
+                expect(await longToken.convertToAssets(test.convertToAssets.shares)).to.eq(
+                    test.convertToAssets.expected,
                 )
             })
         })
