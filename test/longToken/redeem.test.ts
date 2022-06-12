@@ -324,9 +324,13 @@ describe("PerpdexLongToken redeem", async () => {
 
                             // asset
                             expect(await longToken.totalAssets()).to.lt(totalAssetsBefore)
-                            expect(await weth.balanceOf(receiver.address)).to.eq(
-                                receiverAssetsBefore.add(withdrawnAssets),
-                            )
+                            if (fixtureParams.settlementToken === "ETH") {
+                                expect(await redeemSubject).to.changeEtherBalance(receiver, withdrawnAssets)
+                            } else {
+                                expect(await weth.balanceOf(receiver.address)).to.eq(
+                                    receiverAssetsBefore.add(withdrawnAssets),
+                                )
+                            }
 
                             // preview >= burned
                             expect(await previewSubject).to.eq(parseShares(test.withdrawnAssetsPreview))
