@@ -69,9 +69,12 @@ describe("PerpdexLongToken withdraw", async () => {
                 bob = fixture.bob
                 charlie = fixture.charlie
 
-                await weth.connect(owner).deposit({
-                    value: ethers.utils.parseEther("200"),
-                })
+                // deposit ETH into wETH contract
+                if (fixtureParams.settlementToken === "ETH") {
+                    await weth.connect(owner).deposit({
+                        value: ethers.utils.parseEther("15"),
+                    })
+                }
             })
 
             describe("maxWithdraw", async () => {
@@ -123,12 +126,8 @@ describe("PerpdexLongToken withdraw", async () => {
                         if (test.pool.base !== "0" && test.depositAssets !== "0") {
                             var depositAssets = parseAssets(test.depositAssets)
                             var owner_ = alice
-                            if (fixtureParams.settlementToken === "ETH") {
-                                await longToken.connect(owner_).depositETH(owner_.address, { value: depositAssets })
-                            } else {
-                                await weth.connect(owner).mint(alice.address, parseAssets(test.depositAssets))
-                                await longToken.connect(owner_).deposit(parseAssets(test.depositAssets), owner_.address)
-                            }
+                            await weth.connect(owner).mint(alice.address, parseAssets(test.depositAssets))
+                            await longToken.connect(owner_).deposit(parseAssets(test.depositAssets), owner_.address)
                         }
 
                         await exchange.connect(owner).setIsMarketAllowed(market.address, test.isMarketAllowed)
@@ -283,12 +282,8 @@ describe("PerpdexLongToken withdraw", async () => {
 
                         // owner_ deposit
                         var depositAssets = parseAssets(test.depositAssets)
-                        if (fixtureParams.settlementToken === "ETH") {
-                            await longToken.connect(owner_).depositETH(owner_.address, { value: depositAssets })
-                        } else {
-                            await weth.connect(owner).mint(owner_.address, parseAssets(test.depositAssets))
-                            await longToken.connect(owner_).deposit(parseAssets(test.depositAssets), owner_.address)
-                        }
+                        await weth.connect(owner).mint(owner_.address, parseAssets(test.depositAssets))
+                        await longToken.connect(owner_).deposit(parseAssets(test.depositAssets), owner_.address)
 
                         // owner_ approves caller
                         await longToken.connect(owner_).approve(caller.address, parseShares(test.ownerAllowance))
@@ -307,15 +302,9 @@ describe("PerpdexLongToken withdraw", async () => {
                         // caller previews and withdraws
                         var withdrawAssets = parseAssets(test.withdrawAssets)
                         var previewSubject = longToken.connect(caller).previewWithdraw(withdrawAssets)
-                        if (fixtureParams.settlementToken === "ETH") {
-                            var withdrawSubject = longToken
-                                .connect(caller)
-                                .withdrawETH(withdrawAssets, receiver.address, owner_.address)
-                        } else {
-                            var withdrawSubject = longToken
-                                .connect(caller)
-                                .withdraw(withdrawAssets, receiver.address, owner_.address)
-                        }
+                        var withdrawSubject = longToken
+                            .connect(caller)
+                            .withdraw(withdrawAssets, receiver.address, owner_.address)
 
                         // assert withdraw
                         if (test.revertedWith !== void 0) {
@@ -340,14 +329,9 @@ describe("PerpdexLongToken withdraw", async () => {
 
                             // asset
                             expect(await longToken.totalAssets()).to.lt(totalAssetsBefore)
-
-                            if (fixtureParams.settlementToken === "ETH") {
-                                expect(await withdrawSubject).to.changeEtherBalance(caller, withdrawAssets)
-                            } else {
-                                expect(await weth.balanceOf(receiver.address)).to.eq(
-                                    receiverAssetsBefore.add(withdrawAssets),
-                                )
-                            }
+                            expect(await weth.balanceOf(receiver.address)).to.eq(
+                                receiverAssetsBefore.add(withdrawAssets),
+                            )
 
                             // preview >= burned
                             expect(await previewSubject).to.eq(parseShares(test.burnedSharesPreview))

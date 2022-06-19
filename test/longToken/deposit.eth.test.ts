@@ -7,7 +7,7 @@ import { PerpdexLongToken, TestERC20, TestPerpdexExchange, TestPerpdexMarket } f
 import { createPerpdexExchangeFixture } from "./fixtures"
 import { initPool } from "./helpers"
 
-describe("PerpdexLongToken deposit", async () => {
+describe("PerpdexLongToken depositETH", async () => {
     let loadFixture = waffle.createFixtureLoader(waffle.provider.getWallets())
     let fixture
 
@@ -31,10 +31,6 @@ describe("PerpdexLongToken deposit", async () => {
 
     ;[
         {
-            settlementToken: "weth",
-            wethDecimals: 18,
-        },
-        {
             settlementToken: "ETH",
             wethDecimals: 18,
         },
@@ -54,139 +50,9 @@ describe("PerpdexLongToken deposit", async () => {
                 owner = fixture.owner
                 alice = fixture.alice
                 bob = fixture.bob
-
-                // deposit ETH into wETH contract
-                if (fixtureParams.settlementToken === "ETH") {
-                    await weth.connect(owner).deposit({
-                        value: ethers.utils.parseEther("100"),
-                    })
-                }
             })
 
-            describe("maxDeposit", async () => {
-                ;[
-                    {
-                        title: "returns 0 when market is not allowed",
-                        pool: {
-                            base: "0",
-                            quote: "0",
-                        },
-                        isMarketAllowed: false,
-                        expected: "0",
-                    },
-                    {
-                        title: "returns 0 when pool liquidity is zero",
-                        pool: {
-                            base: "0",
-                            quote: "0",
-                        },
-                        expected: "0",
-                    },
-                    {
-                        title: "succeeds",
-                        pool: {
-                            base: "10",
-                            quote: "10",
-                        },
-                        expected: "0.240999270514668206",
-                    },
-                ].forEach(test => {
-                    it(test.title, async () => {
-                        await initPool(fixture, parseShares(test.pool.base), parseShares(test.pool.quote))
-
-                        if (test.isMarketAllowed !== void 0) {
-                            await exchange.connect(owner).setIsMarketAllowed(market.address, test.isMarketAllowed)
-                        }
-
-                        expect(await longToken.maxDeposit(alice.address)).to.eq(parseAssets(test.expected))
-                    })
-                })
-            })
-
-            describe("previewDeposit", async () => {
-                beforeEach(async () => {
-                    // alice approve longToken of max assets
-                    await weth.approveForce(alice.address, longToken.address, ethers.constants.MaxUint256)
-                })
-                ;[
-                    {
-                        title: "reverts when market is not allowed",
-                        pool: {
-                            base: "10",
-                            quote: "10",
-                        },
-                        isMarketAllowed: false,
-                        aliceQuoteAssets: "1000",
-                        depositAssets: "100",
-                        revertedWith: "PE_CMA: market not allowed",
-                    },
-                    {
-                        title: "reverts when liquidity is zero",
-                        pool: {
-                            base: "0",
-                            quote: "0",
-                        },
-                        aliceQuoteAssets: "1000",
-                        depositAssets: "100",
-                        revertedWith: "PM_PS: too large amount",
-                    },
-                    {
-                        title: "reverts when assets is zero",
-                        pool: {
-                            base: "10",
-                            quote: "10",
-                        },
-                        aliceQuoteAssets: "1000",
-                        depositAssets: "0",
-                        revertedWith: "PL_SD: output is zero",
-                    },
-                    {
-                        title: "reverts when assets is too large",
-                        pool: {
-                            base: "10",
-                            quote: "10",
-                        },
-                        aliceQuoteAssets: "1000",
-                        depositAssets: "100",
-                        revertedWith: "PM_PS: too large amount",
-                    },
-                    {
-                        title: "succeeds",
-                        pool: {
-                            base: "10000",
-                            quote: "10000",
-                        },
-                        aliceQuoteAssets: "500",
-                        depositAssets: "10",
-                        mintedShares: "9.990009990009990009",
-                    },
-                ].forEach(test => {
-                    it(test.title, async () => {
-                        // pool
-                        await initPool(fixture, parseShares(test.pool.base), parseShares(test.pool.quote))
-
-                        if (test.isMarketAllowed !== void 0) {
-                            await exchange.connect(owner).setIsMarketAllowed(market.address, test.isMarketAllowed)
-                        }
-
-                        // alice balance
-                        await weth.connect(owner).mint(alice.address, parseAssets(test.aliceQuoteAssets))
-
-                        // alice deposit preview
-                        var depositAssets = parseAssets(test.depositAssets)
-                        var subject = longToken.connect(alice).previewDeposit(depositAssets)
-
-                        // assert
-                        if (test.revertedWith !== void 0) {
-                            await expect(subject).to.revertedWith(test.revertedWith)
-                        } else {
-                            expect(await subject).to.eq(parseShares(test.mintedShares))
-                        }
-                    })
-                })
-            })
-
-            describe("deposit", async () => {
+            describe("depositETH", async () => {
                 beforeEach(async () => {
                     // alice approve longToken of max assets
                     await weth.approveForce(alice.address, longToken.address, ethers.constants.MaxUint256)
@@ -262,7 +128,13 @@ describe("PerpdexLongToken deposit", async () => {
                         var previewSubject = longToken.connect(alice).previewDeposit(depositAssets)
 
                         // alice deposits
-                        var depositSubject = longToken.connect(alice).deposit(depositAssets, alice.address)
+                        if (fixtureParams.settlementToken === "ETH") {
+                            var depositSubject = longToken
+                                .connect(alice)
+                                .depositETH(alice.address, { value: depositAssets })
+                        } else {
+                            var depositSubject = longToken.connect(alice).deposit(depositAssets, alice.address)
+                        }
 
                         // assert
                         if (test.revertedWith !== void 0) {
