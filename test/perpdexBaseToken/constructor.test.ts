@@ -3,9 +3,9 @@
 import { expect } from "chai"
 import { BigNumber } from "ethers"
 import { ethers, waffle } from "hardhat"
+import IPerpdexExchangeJson from "../../deps/perpdex-contract/artifacts/contracts/interface/IPerpdexExchange.sol/IPerpdexExchange.json"
 import IPerpdexPriceFeedJson from "../../deps/perpdex-contract/artifacts/contracts/interface/IPerpdexPriceFeed.sol/IPerpdexPriceFeed.json"
 import { TestERC20, TestPerpdexExchange, TestPerpdexMarket } from "../../typechain"
-import { createPerpdexTokenBaseFixture } from "./fixtures"
 
 describe("PerpdexTokenBase constructor", async () => {
     async function deployWeth() {
@@ -117,5 +117,21 @@ describe("PerpdexTokenBase constructor", async () => {
                 }
             })
         })
+    })
+
+    it("reverts when perpdex decimals is not 18", async () => {
+        var [owner] = await waffle.provider.getWallets()
+
+        // deploy mocked exchange and mock decimals to not 18
+        var weth = await deployWeth()
+        var mockedExchange = await waffle.deployMockContract(owner, IPerpdexExchangeJson.abi)
+        await mockedExchange.mock.settlementToken.returns(weth.address) // this needed before assertion
+        await mockedExchange.mock.quoteDecimals.returns(17) // mock
+        var priceFeed = await deployMockedPriceFeed(owner)
+        var market = await deployPerpdexMarket(mockedExchange.address, priceFeed.address, ethers.constants.AddressZero)
+        var perpdexTokenBaseF = await ethers.getContractFactory("TestPerpdexTokenBase")
+        await expect(
+            perpdexTokenBaseF.deploy(market.address, "prefix", "symbol", ethers.constants.AddressZero),
+        ).to.revertedWith("PTB_C: invalid decimals")
     })
 })
