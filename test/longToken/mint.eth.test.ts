@@ -7,7 +7,7 @@ import { PerpdexLongToken, TestERC20, TestPerpdexExchange, TestPerpdexMarket } f
 import { createPerpdexExchangeFixture } from "./fixtures"
 import { initPool } from "./helpers"
 
-describe("PerpdexLongToken mint", async () => {
+describe("PerpdexLongToken mintETH", async () => {
     let loadFixture = waffle.createFixtureLoader(waffle.provider.getWallets())
     let fixture
 
@@ -31,10 +31,6 @@ describe("PerpdexLongToken mint", async () => {
 
     ;[
         {
-            settlementToken: "weth",
-            wethDecimals: 18,
-        },
-        {
             settlementToken: "ETH",
             wethDecimals: 18,
         },
@@ -54,54 +50,6 @@ describe("PerpdexLongToken mint", async () => {
                 owner = fixture.owner
                 alice = fixture.alice
                 bob = fixture.bob
-
-                // deposit ETH into wETH contract
-                if (fixtureParams.settlementToken === "ETH") {
-                    await weth.connect(owner).deposit({
-                        value: ethers.utils.parseEther("100"),
-                    })
-                }
-            })
-
-            describe("maxMint", async () => {
-                ;[
-                    {
-                        title: "returns 0 when market is not allowed",
-                        pool: {
-                            base: "0",
-                            quote: "0",
-                        },
-                        isMarketAllowed: false,
-                        expected: "0",
-                    },
-                    {
-                        title: "returns 0 when pool liquidity is zero",
-                        pool: {
-                            base: "0",
-                            quote: "0",
-                        },
-                        expected: "0",
-                    },
-                    {
-                        title: "succeeds",
-                        pool: {
-                            base: "10",
-                            quote: "10",
-                        },
-                        expected: "0.246950765959598383",
-                    },
-                ].forEach(test => {
-                    it(test.title, async () => {
-                        // init pool
-                        await initPool(fixture, parseShares(test.pool.base), parseShares(test.pool.quote))
-
-                        if (test.isMarketAllowed !== void 0) {
-                            await exchange.connect(owner).setIsMarketAllowed(market.address, test.isMarketAllowed)
-                        }
-
-                        expect(await longToken.maxMint(alice.address)).to.eq(parseShares(test.expected))
-                    })
-                })
             })
 
             describe("previewMint", async () => {
@@ -186,7 +134,7 @@ describe("PerpdexLongToken mint", async () => {
                 })
             })
 
-            describe("mint", async () => {
+            describe("mintETH", async () => {
                 beforeEach(async () => {
                     // alice approve longToken of max assets
                     await weth.approveForce(alice.address, longToken.address, ethers.constants.MaxUint256)
@@ -238,6 +186,18 @@ describe("PerpdexLongToken mint", async () => {
                         revertedWith: "PM_PS: too large amount",
                     },
                     {
+                        title: "reverts when send ETH value is lower than previewMint",
+                        pool: {
+                            base: "10000",
+                            quote: "10000",
+                        },
+                        aliceQuoteAssets: "50",
+                        mintShares: "20",
+                        sendETHValue: "10",
+                        revertedWith: "SafeMath: subtraction overflow",
+                        skipPreviewSubjectRevertAssert: true,
+                    },
+                    {
                         title: "succeeds",
                         pool: {
                             base: "10000",
@@ -263,11 +223,15 @@ describe("PerpdexLongToken mint", async () => {
                         var previewSubject = longToken.connect(alice).previewMint(mintShares)
 
                         // alice mints
-                        var mintSubject = longToken.connect(alice).mint(mintShares, alice.address)
+                        var mintSubject = longToken
+                            .connect(alice)
+                            .mintETH(mintShares, alice.address, { value: parseUnits(test.sendETHValue, 18) })
 
                         // assert
                         if (test.revertedWith !== void 0) {
-                            await expect(previewSubject).to.reverted
+                            if (!test.skipPreviewSubjectRevertAssert) {
+                                await expect(previewSubject).to.reverted
+                            }
                             await expect(mintSubject).to.revertedWith(test.revertedWith)
                         } else {
                             var depositedAssets = parseAssets(test.depositedAssets)
@@ -282,7 +246,7 @@ describe("PerpdexLongToken mint", async () => {
 
                             // asset
                             expect(await longToken.totalAssets()).to.eq(parseAssets(test.totalAssetsAfter))
-                            expect(await weth.balanceOf(alice.address)).to.eq(parseAssets(test.aliceAssetsAfter))
+                            expect(await mintSubject).to.changeEtherBalance(alice, depositedAssets)
 
                             // preview >= assets
                             expect(await previewSubject).to.gte(depositedAssets)
