@@ -186,7 +186,7 @@ describe("PerpdexLongToken deposit", async () => {
                 })
             })
 
-            describe("deposit or depositETH", async () => {
+            describe("deposit", async () => {
                 beforeEach(async () => {
                     // alice approve longToken of max assets
                     await weth.approveForce(alice.address, longToken.address, ethers.constants.MaxUint256)
