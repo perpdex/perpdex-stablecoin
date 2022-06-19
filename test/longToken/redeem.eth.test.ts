@@ -7,7 +7,7 @@ import { PerpdexLongToken, TestERC20, TestPerpdexExchange, TestPerpdexMarket } f
 import { createPerpdexExchangeFixture } from "./fixtures"
 import { initPool } from "./helpers"
 
-describe("PerpdexLongToken redeem", async () => {
+describe("PerpdexLongToken redeemETH", async () => {
     let loadFixture = waffle.createFixtureLoader(waffle.provider.getWallets())
     let fixture
 
@@ -44,10 +44,6 @@ describe("PerpdexLongToken redeem", async () => {
 
     ;[
         {
-            settlementToken: "weth",
-            wethDecimals: 18,
-        },
-        {
             settlementToken: "ETH",
             wethDecimals: 18,
         },
@@ -68,87 +64,9 @@ describe("PerpdexLongToken redeem", async () => {
                 alice = fixture.alice
                 bob = fixture.bob
                 charlie = fixture.charlie
-
-                // deposit ETH into wETH contract
-                if (fixtureParams.settlementToken === "ETH") {
-                    await weth.connect(owner).deposit({
-                        value: ethers.utils.parseEther("50"),
-                    })
-                }
             })
 
-            describe("maxRedeem", async () => {
-                beforeEach(async () => {
-                    // alice approve longToken of max assets
-                    await weth.approveForce(alice.address, longToken.address, ethers.constants.MaxUint256)
-                    await weth.approveForce(longToken.address, exchange.address, ethers.constants.MaxUint256)
-                })
-                ;[
-                    {
-                        title: "returns 0 when market is not allowed",
-                        pool: {
-                            base: "10000",
-                            quote: "10000",
-                        },
-                        isMarketAllowed: false,
-                        depositAssets: "10",
-                        expected: "0",
-                    },
-                    {
-                        title: "returns 0 when pool liquidity is zero",
-                        pool: {
-                            base: "0",
-                            quote: "0",
-                        },
-                        isMarketAllowed: true,
-                        depositAssets: "10",
-                        expected: "0",
-                    },
-                    {
-                        title: "returns owner's shares",
-                        pool: {
-                            base: "10000",
-                            quote: "10000",
-                        },
-                        isMarketAllowed: true,
-                        depositAssets: "10",
-                        expected: "9.990009990009990009",
-                    },
-                    {
-                        title: "returns owner's 0 shares",
-                        pool: {
-                            base: "10000",
-                            quote: "10000",
-                        },
-                        isMarketAllowed: true,
-                        depositAssets: "0",
-                        expected: "0",
-                    },
-                ].forEach(test => {
-                    it(test.title, async () => {
-                        // init pool
-                        await initPool(fixture, parseShares(test.pool.base), parseShares(test.pool.quote))
-
-                        await exchange.connect(owner).setIsMarketAllowed(market.address, test.isMarketAllowed)
-
-                        // alice deposits
-                        // deposit only when market is allowed and pool has liquidity
-                        if (test.isMarketAllowed && test.pool.base !== "0" && test.depositAssets !== "0") {
-                            var depositAssets = parseAssets(test.depositAssets)
-                            var owner_ = alice
-                            await weth.connect(owner).mint(alice.address, parseAssets(test.depositAssets))
-                            await longToken.connect(owner_).deposit(parseAssets(test.depositAssets), owner_.address)
-                        }
-
-                        // alice maxRedeem
-                        expect(await longToken.connect(alice).maxRedeem(alice.address)).to.eq(
-                            parseAssets(test.expected),
-                        )
-                    })
-                })
-            })
-
-            describe("previewRedeem and redeem", async () => {
+            describe("previewRedeem and redeemETH", async () => {
                 beforeEach(async () => {
                     // alice approve longToken of max assets
                     await weth.approveForce(alice.address, longToken.address, ethers.constants.MaxUint256)
@@ -280,7 +198,7 @@ describe("PerpdexLongToken redeem", async () => {
                         // owner_ deposit
                         var depositAssets = parseAssets(test.depositAssets)
                         await weth.connect(owner).mint(owner_.address, depositAssets)
-                        await longToken.connect(owner_).deposit(parseAssets(test.depositAssets), owner_.address)
+                        await longToken.connect(owner_).depositETH(owner_.address, { value: depositAssets })
 
                         // owner_ approves caller
                         await longToken.connect(owner_).approve(caller.address, parseShares(test.ownerAllowance))
@@ -301,7 +219,7 @@ describe("PerpdexLongToken redeem", async () => {
                         var previewSubject = longToken.connect(caller).previewRedeem(redeemShares)
                         var redeemSubject = longToken
                             .connect(caller)
-                            .redeem(redeemShares, receiver.address, owner_.address)
+                            .redeemETH(redeemShares, receiver.address, owner_.address)
 
                         // assert
                         if (test.revertedWith !== void 0) {
@@ -332,9 +250,7 @@ describe("PerpdexLongToken redeem", async () => {
 
                             // asset
                             expect(await longToken.totalAssets()).to.lt(totalAssetsBefore)
-                            expect(await weth.balanceOf(receiver.address)).to.eq(
-                                receiverAssetsBefore.add(withdrawnAssets),
-                            )
+                            expect(await redeemSubject).to.changeEtherBalance(receiver, withdrawnAssets)
 
                             // preview >= burned
                             expect(await previewSubject).to.eq(parseShares(test.withdrawnAssetsPreview))
