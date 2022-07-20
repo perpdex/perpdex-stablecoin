@@ -2,7 +2,7 @@
 import { MockContract } from "ethereum-waffle"
 import { BigNumber, Wallet } from "ethers"
 import { ethers, waffle } from "hardhat"
-import IPerpdexPriceFeedJson from "../../deps/perpdex-contract/artifacts/contracts/interface/IPerpdexPriceFeed.sol/IPerpdexPriceFeed.json"
+import IPerpdexPriceFeedJson from "../../deps/perpdex-contract/artifacts/contracts/interfaces/IPerpdexPriceFeed.sol/IPerpdexPriceFeed.json"
 import { PerpdexLongToken, TestERC20, TestPerpdexExchange, TestPerpdexMarket } from "../../typechain"
 
 export interface PerpdexExchangeFixture {
