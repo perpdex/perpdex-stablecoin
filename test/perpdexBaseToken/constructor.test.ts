@@ -9,13 +9,15 @@ import { TestERC20, TestPerpdexExchange, TestPerpdexMarket } from "../../typecha
 
 describe("PerpdexTokenBase constructor", async () => {
     async function deployWeth() {
-        const tokenFactory = await ethers.getContractFactory("TestERC20")
+        const tokenFactory = await ethers.getContractFactory("contracts/test/TestERC20.sol:TestERC20")
         var weth = (await tokenFactory.deploy("TestWETH", "WETH", 18)) as TestERC20
         return weth
     }
 
     async function deployPerpdexExchange(settlementTokenAddress) {
-        var perpdexExchangeFactory = await ethers.getContractFactory("TestPerpdexExchange")
+        var perpdexExchangeFactory = await ethers.getContractFactory(
+            "contracts/test/TestPerpdexExchange.sol:TestPerpdexExchange",
+        )
         var perpdexExchange = (await perpdexExchangeFactory.deploy(settlementTokenAddress)) as TestPerpdexExchange
         return perpdexExchange
     }
@@ -28,7 +30,9 @@ describe("PerpdexTokenBase constructor", async () => {
     }
 
     async function deployPerpdexMarket(perpdexExchangeAddress, priceFeedBaseAddress, priceFeedQuoteAddress) {
-        var perpdexMarketFactory = await ethers.getContractFactory("TestPerpdexMarket")
+        var perpdexMarketFactory = await ethers.getContractFactory(
+            "contracts/test/TestPerpdexMarket.sol:TestPerpdexMarket",
+        )
         var perpdexMarket = (await perpdexMarketFactory.deploy(
             "USD",
             perpdexExchangeAddress,

@@ -27,7 +27,7 @@ export function createPerpdexExchangeFixture(
     params: FixtureParams = { settlementToken: "weth", wethDecimals: 18 },
 ): (wallets, provider) => Promise<PerpdexExchangeFixture> {
     return async ([owner, alice, bob, charlie], provider): Promise<PerpdexExchangeFixture> => {
-        const tokenFactory = await ethers.getContractFactory("TestERC20")
+        const tokenFactory = await ethers.getContractFactory("contracts/test/TestERC20.sol:TestERC20")
         let weth = (await tokenFactory.deploy("TestWETH", "WETH", params.wethDecimals)) as TestERC20
         let settlementTokenAddress
         let wethAddress
@@ -46,7 +46,9 @@ export function createPerpdexExchangeFixture(
         let baseDecimals = 18
 
         // exchange
-        const perpdexExchangeFactory = await ethers.getContractFactory("TestPerpdexExchange")
+        const perpdexExchangeFactory = await ethers.getContractFactory(
+            "contracts/test/TestPerpdexExchange.sol:TestPerpdexExchange",
+        )
         const perpdexExchange = (await perpdexExchangeFactory.deploy(settlementTokenAddress)) as TestPerpdexExchange
 
         // base priceFeed
@@ -55,7 +57,9 @@ export function createPerpdexExchangeFixture(
         await priceFeedBase.mock.decimals.returns(12)
 
         // market
-        const perpdexMarketFactory = await ethers.getContractFactory("TestPerpdexMarket")
+        const perpdexMarketFactory = await ethers.getContractFactory(
+            "contracts/test/TestPerpdexMarket.sol:TestPerpdexMarket",
+        )
         const perpdexMarket = (await perpdexMarketFactory.deploy(
             "USD",
             perpdexExchange.address,

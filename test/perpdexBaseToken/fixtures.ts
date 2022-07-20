@@ -17,12 +17,14 @@ export interface PerpdexTokenBaseFixture {
 export function createPerpdexTokenBaseFixture(): (wallets, provider) => Promise<PerpdexTokenBaseFixture> {
     return async ([owner, alice, bob], provider): Promise<PerpdexTokenBaseFixture> => {
         // erc20 asset
-        const tokenFactory = await ethers.getContractFactory("TestERC20")
+        const tokenFactory = await ethers.getContractFactory("contracts/test/TestERC20.sol:TestERC20")
         let weth = (await tokenFactory.deploy("TestWETH", "WETH", 18)) as TestERC20
         let settlementToken = weth.address
 
         // exchange
-        const perpdexExchangeFactory = await ethers.getContractFactory("TestPerpdexExchange")
+        const perpdexExchangeFactory = await ethers.getContractFactory(
+            "contracts/test/TestPerpdexExchange.sol:TestPerpdexExchange",
+        )
         const perpdexExchange = (await perpdexExchangeFactory.deploy(settlementToken)) as TestPerpdexExchange
 
         // priceFeed
@@ -31,7 +33,9 @@ export function createPerpdexTokenBaseFixture(): (wallets, provider) => Promise<
         await priceFeed.mock.decimals.returns(12)
 
         // market
-        const perpdexMarketFactory = await ethers.getContractFactory("TestPerpdexMarket")
+        const perpdexMarketFactory = await ethers.getContractFactory(
+            "contracts/test/TestPerpdexMarket.sol:TestPerpdexMarket",
+        )
         const perpdexMarket = (await perpdexMarketFactory.deploy(
             "USD",
             perpdexExchange.address,
