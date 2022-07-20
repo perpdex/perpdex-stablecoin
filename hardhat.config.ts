@@ -1,4 +1,5 @@
 import "@nomiclabs/hardhat-waffle"
+import "@nomicfoundation/hardhat-chai-matchers"
 import "@typechain/hardhat"
 import "solidity-coverage"
 import "hardhat-deploy"

@@ -6,6 +6,7 @@ import { ethers, waffle } from "hardhat"
 import { PerpdexLongToken, TestERC20, TestPerpdexExchange, TestPerpdexMarket } from "../../typechain"
 import { createPerpdexExchangeFixture } from "./fixtures"
 import { initPool } from "./helpers"
+import { PANIC_CODES } from "@nomicfoundation/hardhat-chai-matchers/panic"
 
 describe("PerpdexLongToken mintETH", async () => {
     let loadFixture = waffle.createFixtureLoader(waffle.provider.getWallets())
@@ -112,7 +113,7 @@ describe("PerpdexLongToken mintETH", async () => {
                         aliceQuoteAssets: "50",
                         mintShares: "20",
                         sendETHValue: "10",
-                        revertedWith: "SafeMath: subtraction overflow",
+                        revertedWith: PANIC_CODES.ARITHMETIC_UNDER_OR_OVERFLOW,
                         skipPreviewSubjectRevertAssert: true,
                     },
                     {
@@ -150,7 +151,11 @@ describe("PerpdexLongToken mintETH", async () => {
                             if (!test.skipPreviewSubjectRevertAssert) {
                                 await expect(previewSubject).to.reverted
                             }
-                            await expect(mintSubject).to.revertedWith(test.revertedWith)
+                            if (typeof test.revertedWith === "number") {
+                                await expect(mintSubject).to.revertedWithPanic(test.revertedWith)
+                            } else {
+                                await expect(mintSubject).to.revertedWith(test.revertedWith)
+                            }
                         } else {
                             var depositedAssets = parseAssets(test.depositedAssets)
                             // event
