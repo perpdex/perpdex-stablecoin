@@ -181,7 +181,7 @@ describe("PerpdexLongToken base", async () => {
                 },
                 depositAssets: "0",
                 convertShares: "5",
-                revertedWith: "", //  uniswap full math muldiv error in markPrice calculation
+                expected: "0",
             },
             {
                 title: "totalSupply == 0 and pool has liquidity",
@@ -242,11 +242,7 @@ describe("PerpdexLongToken base", async () => {
 
                 var subject = longToken.convertToAssets(parseShares(test.convertShares))
 
-                if (test.revertedWith !== void 0) {
-                    await expect(subject).to.revertedWith(test.revertedWith)
-                } else {
-                    expect(await subject).to.eq(parseAssets(test.expected))
-                }
+                expect(await subject).to.eq(parseAssets(test.expected))
             })
         })
     })
