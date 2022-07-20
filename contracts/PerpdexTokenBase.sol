@@ -9,11 +9,11 @@ import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.s
 import { SafeCast } from "@openzeppelin/contracts/utils/math/SafeCast.sol";
 import { PRBMath } from "prb-math/contracts/PRBMath.sol";
 import { FixedPoint96 } from "@uniswap/v3-core/contracts/libraries/FixedPoint96.sol";
-import { IPerpdexExchange } from "../deps/perpdex-contract/contracts/interface/IPerpdexExchange.sol";
-import { IPerpdexMarket } from "../deps/perpdex-contract/contracts/interface/IPerpdexMarket.sol";
-import { IWETH9 } from "../deps/perpdex-contract/contracts/interface/external/IWETH9.sol";
-import { IERC4626 } from "./interface/IERC4626.sol";
-import { IERC20Metadata } from "./interface/IERC20Metadata.sol";
+import { IPerpdexExchange } from "../deps/perpdex-contract/contracts/interfaces/IPerpdexExchange.sol";
+import { IPerpdexMarket } from "../deps/perpdex-contract/contracts/interfaces/IPerpdexMarket.sol";
+import { IWETH9 } from "../deps/perpdex-contract/contracts/interfaces/external/IWETH9.sol";
+import { IERC4626 } from "./interfaces/IERC4626.sol";
+import { IERC20Metadata } from "./interfaces/IERC20Metadata.sol";
 
 abstract contract PerpdexTokenBase is IERC4626, ReentrancyGuard, ERC20 {
     using SafeCast for int256;

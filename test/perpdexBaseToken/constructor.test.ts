@@ -3,8 +3,8 @@
 import { expect } from "chai"
 import { BigNumber } from "ethers"
 import { ethers, waffle } from "hardhat"
-import IPerpdexExchangeJson from "../../deps/perpdex-contract/artifacts/contracts/interface/IPerpdexExchange.sol/IPerpdexExchange.json"
-import IPerpdexPriceFeedJson from "../../deps/perpdex-contract/artifacts/contracts/interface/IPerpdexPriceFeed.sol/IPerpdexPriceFeed.json"
+import IPerpdexExchangeJson from "../../deps/perpdex-contract/artifacts/contracts/interfaces/IPerpdexExchange.sol/IPerpdexExchange.json"
+import IPerpdexPriceFeedJson from "../../deps/perpdex-contract/artifacts/contracts/interfaces/IPerpdexPriceFeed.sol/IPerpdexPriceFeed.json"
 import { TestERC20, TestPerpdexExchange, TestPerpdexMarket } from "../../typechain"
 
 describe("PerpdexTokenBase constructor", async () => {
