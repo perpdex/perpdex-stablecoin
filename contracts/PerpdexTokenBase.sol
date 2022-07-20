@@ -1,13 +1,13 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-pragma solidity 0.7.6;
+pragma solidity >=0.7.6;
 pragma abicoder v2;
 
-import { ReentrancyGuard } from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
+import { ReentrancyGuard } from "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { ERC20 } from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
-import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
-import { SafeCast } from "@openzeppelin/contracts/utils/SafeCast.sol";
-import { FullMath } from "@uniswap/v3-core/contracts/libraries/FullMath.sol";
+import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import { SafeCast } from "@openzeppelin/contracts/utils/math/SafeCast.sol";
+import { PRBMath } from "prb-math/contracts/PRBMath.sol";
 import { FixedPoint96 } from "@uniswap/v3-core/contracts/libraries/FixedPoint96.sol";
 import { IPerpdexExchange } from "../deps/perpdex-contract/contracts/interface/IPerpdexExchange.sol";
 import { IPerpdexMarket } from "../deps/perpdex-contract/contracts/interface/IPerpdexMarket.sol";
@@ -101,34 +101,34 @@ abstract contract PerpdexTokenBase is IERC4626, ReentrancyGuard, ERC20 {
         uint256 supply = totalSupply();
         if (supply == 0) {
             return
-                FullMath.mulDiv(
+                PRBMath.mulDiv(
                     _convertToPerpdexDecimals(assets),
                     FixedPoint96.Q96,
                     IPerpdexMarket(market).getShareMarkPriceX96()
                 );
         }
-        return FullMath.mulDiv(assets, supply, totalAssets());
+        return PRBMath.mulDiv(assets, supply, totalAssets());
     }
 
     function convertToAssets(uint256 shares) public view override returns (uint256 assets) {
         uint256 supply = totalSupply();
         if (supply == 0) {
             return
-                FullMath.mulDiv(
+                PRBMath.mulDiv(
                     _convertToAssetDecimals(shares),
                     IPerpdexMarket(market).getShareMarkPriceX96(),
                     FixedPoint96.Q96
                 );
         }
-        return FullMath.mulDiv(shares, totalAssets(), supply);
+        return PRBMath.mulDiv(shares, totalAssets(), supply);
     }
 
     function _convertToPerpdexDecimals(uint256 amount) internal view returns (uint256 assets) {
-        return FullMath.mulDiv(amount, 10**DECIMALS, 10**IERC20Metadata(asset).decimals());
+        return PRBMath.mulDiv(amount, 10**DECIMALS, 10**IERC20Metadata(asset).decimals());
     }
 
     function _convertToAssetDecimals(uint256 amount) internal view returns (uint256 assets) {
-        return FullMath.mulDiv(amount, 10**IERC20Metadata(asset).decimals(), 10**DECIMALS);
+        return PRBMath.mulDiv(amount, 10**IERC20Metadata(asset).decimals(), 10**DECIMALS);
     }
 
     function _beforeTrade(
@@ -287,19 +287,5 @@ abstract contract PerpdexTokenBase is IERC4626, ReentrancyGuard, ERC20 {
                     settlementToken == address(0) ? nativeTokenSymbol : IERC20Metadata(settlementToken).symbol()
                 )
             );
-    }
-
-    // https://github.com/OpenZeppelin/openzeppelin-contracts/commit/c5a6cae8981d8005e22243b681745af92d44d1fc
-    function _spendAllowance(
-        address owner,
-        address spender,
-        uint256 amount
-    ) internal virtual {
-        uint256 currentAllowance = allowance(owner, spender);
-        if (currentAllowance != type(uint256).max) {
-            // solhint-disable-next-line reason-string
-            require(amount <= currentAllowance, "ERC20: transfer amount exceeds allowance");
-            _approve(owner, spender, currentAllowance - amount);
-        }
     }
 }

@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-pragma solidity 0.7.6;
+pragma solidity >=0.7.6;
 pragma abicoder v2;
 
-import { Math } from "@openzeppelin/contracts/math/Math.sol";
-import { SafeCast } from "@openzeppelin/contracts/utils/SafeCast.sol";
-import { SafeMath } from "@openzeppelin/contracts/math/SafeMath.sol";
+import { Math } from "@openzeppelin/contracts/utils/math/Math.sol";
+import { SafeCast } from "@openzeppelin/contracts/utils/math/SafeCast.sol";
+import { SafeMath } from "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import { PerpdexTokenBase } from "./PerpdexTokenBase.sol";
 
 // This class should be responsible for the high layers and not the low layers
@@ -40,7 +40,7 @@ contract PerpdexLongToken is PerpdexTokenBase {
         assets = previewMint(shares);
         uint256 exceeded = msg.value.sub(assets);
         if (exceeded > 0) {
-            msg.sender.transfer(exceeded);
+            payable(msg.sender).transfer(exceeded);
         }
         _doMint(assets, shares, receiver);
     }
