@@ -58,7 +58,7 @@ describe("PerpdexTokenBase.", async () => {
                 caller: "alice",
                 owner: "bob",
                 amount: BigNumber.from(100),
-                revertedWith: "ERC20: transfer amount exceeds allowance",
+                revertedWith: "ERC20: insufficient allowance",
             },
         ].forEach(test => {
             it(test.title, async function () {

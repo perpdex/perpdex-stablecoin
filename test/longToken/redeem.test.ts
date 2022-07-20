@@ -218,7 +218,7 @@ describe("PerpdexLongToken redeem", async () => {
                         owner: "bob",
                         receiver: "alice",
                         withdrawnAssetsPreview: "9.909989199802887336",
-                        revertedWith: "ERC20: transfer amount exceeds allowance",
+                        revertedWith: "ERC20: insufficient allowance",
                     },
                     {
                         title: "succeeds when alice redeems her shares",

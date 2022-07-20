@@ -1,7 +1,9 @@
 import "@nomiclabs/hardhat-waffle"
+import "@nomicfoundation/hardhat-chai-matchers"
 import "@typechain/hardhat"
 import "solidity-coverage"
 import "hardhat-deploy"
+import "@matterlabs/hardhat-zksync-solc"
 import { HardhatUserConfig } from "hardhat/config"
 import { resolve } from "path"
 import { config as dotenvConfig } from "dotenv"
@@ -10,11 +12,23 @@ dotenvConfig({ path: resolve(__dirname, "./.env") })
 
 const config: HardhatUserConfig = {
     solidity: {
-        version: "0.7.6",
+        version: "0.8.12",
         settings: {
             optimizer: {
                 enabled: true,
                 runs: 200,
+            },
+        },
+    },
+    zksolc: {
+        version: "0.1.0",
+        compilerSource: "docker",
+        settings: {
+            optimizer: {
+                enabled: true,
+            },
+            experimental: {
+                dockerImage: "matterlabs/zksolc",
             },
         },
     },
@@ -63,6 +77,19 @@ if (process.env.TESTNET_PRIVATE_KEY) {
                 apiUrl: "https://blockscout.com/shibuya",
             },
         },
+    }
+
+    config.networks.zksync2_testnet = {
+        url: "https://zksync2-testnet.zksync.dev",
+        chainId: 280,
+        accounts: [process.env.TESTNET_PRIVATE_KEY],
+        gasMultiplier: 2,
+        verify: {
+            etherscan: {
+                apiUrl: "https://zksync2-testnet.zkscan.io/",
+            },
+        },
+        zksync: true,
     }
 }
 

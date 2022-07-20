@@ -1,18 +1,20 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-pragma solidity 0.7.6;
+pragma solidity >=0.7.6;
 
-import "@openzeppelin/contracts/proxy/Initializable.sol";
-import "@openzeppelin/contracts/presets/ERC20PresetMinterPauser.sol";
+import "@openzeppelin/contracts/proxy/utils/Initializable.sol";
+import "@openzeppelin/contracts/token/ERC20/presets/ERC20PresetMinterPauser.sol";
 
 contract TestERC20 is ERC20PresetMinterPauser {
     uint256 _transferFeeRatio;
 
+    uint8 private immutable _decimals;
+
     constructor(
         string memory name,
         string memory symbol,
-        uint8 decimal
+        uint8 decimalsArg
     ) ERC20PresetMinterPauser(name, symbol) {
-        _setupDecimals(decimal);
+        _decimals = decimalsArg;
         _transferFeeRatio = 0;
     }
 
@@ -32,6 +34,10 @@ contract TestERC20 is ERC20PresetMinterPauser {
 
     function withdraw(uint256 amount) external {
         _burn(msg.sender, amount);
-        msg.sender.transfer(amount);
+        payable(msg.sender).transfer(amount);
+    }
+
+    function decimals() public view override returns (uint8) {
+        return _decimals;
     }
 }

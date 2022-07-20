@@ -136,7 +136,7 @@ describe("PerpdexLongToken withdrawETH", async () => {
                         owner: "bob",
                         receiver: "alice",
                         burnedSharesPreview: "9.890010989999990110",
-                        revertedWith: "ERC20: transfer amount exceeds allowance",
+                        revertedWith: "ERC20: insufficient allowance",
                     },
                     {
                         title: "succeeds when alice withdraws her assets",
