@@ -11,6 +11,7 @@ jobs:
           persist-credentials: false
           submodules: recursive
 
+      - uses: ./.github/actions/setup
       - uses: ./.github/actions/build
 
       - name: Run contract tests
@@ -18,6 +19,20 @@ jobs:
         env:
           # to solve problem of memory leak https://stackoverflow.com/a/59572966
           NODE_OPTIONS: "--max-old-space-size=4096"
+
+  build-zksync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          persist-credentials: false
+          submodules: recursive
+
+      - uses: ./.github/actions/setup
+
+      - run: yarn run build-zksync
+        env:
+          TESTNET_PRIVATE_KEY: '0000000000000000000000000000000000000000000000000000000000000000'
 
   coverage:
     runs-on: ubuntu-latest
@@ -27,6 +42,7 @@ jobs:
           persist-credentials: false
           submodules: recursive
 
+      - uses: ./.github/actions/setup
       - uses: ./.github/actions/build
 
       - name: Run contract coverage

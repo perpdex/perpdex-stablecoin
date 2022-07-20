@@ -7,6 +7,7 @@
     "lint": "solhint 'contracts/**/*.sol'",
     "test": "hardhat test",
     "build": "hardhat compile",
+    "build-zksync": "hardhat compile --network zksync2_testnet",
     "coverage": "hardhat coverage",
     "code-lines": "npx cloc --exclude-dir=test contracts",
     "prepare": "husky install"
