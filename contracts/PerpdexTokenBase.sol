@@ -5,6 +5,7 @@ pragma abicoder v2;
 import { ReentrancyGuard } from "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { ERC20 } from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import { ERC20Permit } from "@openzeppelin/contracts/token/ERC20/extensions/draft-ERC20Permit.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import { SafeCast } from "@openzeppelin/contracts/utils/math/SafeCast.sol";
 import { PRBMath } from "prb-math/contracts/PRBMath.sol";
@@ -15,7 +16,7 @@ import { IWETH9 } from "../deps/perpdex-contract/contracts/interfaces/external/I
 import { IERC4626 } from "./interfaces/IERC4626.sol";
 import { IERC20Metadata } from "./interfaces/IERC20Metadata.sol";
 
-abstract contract PerpdexTokenBase is IERC4626, ReentrancyGuard, ERC20 {
+abstract contract PerpdexTokenBase is IERC4626, ReentrancyGuard, ERC20, ERC20Permit {
     using SafeCast for int256;
 
     address public immutable override asset;
@@ -41,6 +42,7 @@ abstract contract PerpdexTokenBase is IERC4626, ReentrancyGuard, ERC20 {
             _getERC20Name(marketArg, namePrefix, nativeTokenSymbol),
             _getERC20Name(marketArg, symbolPrefix, nativeTokenSymbol)
         )
+        ERC20Permit(_getERC20Name(marketArg, namePrefix, nativeTokenSymbol))
     {
         address exchangeVar = IPerpdexMarket(marketArg).exchange();
         address settlementToken = IPerpdexExchange(exchangeVar).settlementToken();
@@ -65,6 +67,18 @@ abstract contract PerpdexTokenBase is IERC4626, ReentrancyGuard, ERC20 {
     receive() external payable {}
 
     // make ERC20 external functions non reentrant
+
+    function permit(
+        address owner,
+        address spender,
+        uint256 value,
+        uint256 deadline,
+        uint8 v,
+        bytes32 r,
+        bytes32 s
+    ) public override nonReentrant {
+        ERC20Permit.permit(owner, spender, value, deadline, v, r, s);
+    }
 
     function transfer(address recipient, uint256 amount) public override nonReentrant returns (bool) {
         return ERC20.transfer(recipient, amount);
