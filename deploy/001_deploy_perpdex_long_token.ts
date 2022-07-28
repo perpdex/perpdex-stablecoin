@@ -34,6 +34,11 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
                 market: "PerpdexMarketUSD",
             },
         ],
+        mumbai: [
+            {
+                market: "PerpdexMarketUSD",
+            },
+        ],
         shibuya: [
             {
                 market: "PerpdexMarketBTC",
@@ -60,11 +65,13 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
 
     const nativeTokenSymbol =
         {
+            mumbai: "MATIC",
             shibuya: "ASTR",
         }[hre.network.name] || "ETH"
 
     const wethAddress = {
         rinkeby: "0xc778417E063141139Fce010982780140Aa0cD5Ab",
+        mumbai: "0x9c3C9283D3e44854697Cd22D3Faa240Cfb032889", // correct?
         shibuya: "0x9Af480478974a2fda7d5aE667541639164D2858B", // correct?
         zksync2_testnet: "0xB4fbFB7807C31268Dc1ac8c26fA4ef41115d0ece",
     }[hre.network.name]
